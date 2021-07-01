@@ -31,7 +31,7 @@ $_stdout = [IO.File]::ReadAllText("$_stdoutfile")
 Remove-Item "$_stderrfile"
 Remove-Item "$_stdoutfile"
 
-if ( "$_exitonfail" -eq "true") {
+if (( "$_exitonfail" -eq "true" ) -and ("$_stderr" -ne "" )) {
     Write-Error "$_stderr"
     exit $_exitcode
 }
