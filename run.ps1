@@ -16,8 +16,10 @@ $_stderrfile = "$_path/stderr.$_id"
 $_stdoutfile = "$_path/stdout.$_id"
 
 $_ENVRMT = $_environment.Split(";")
-for (($i = 0); $i -lt $_ENVRMT.Count; $i += 2) {
-    [Environment]::SetEnvironmentVariable($_ENVRMT[$i], $_ENVRMT[$i + 1], "Process")
+if ($_ENVRMT.Count -gt 1) {
+    for (($i = 0); $i -lt $_ENVRMT.Count; $i += 2) {
+        [Environment]::SetEnvironmentVariable($_ENVRMT[$i], $_ENVRMT[$i + 1], "Process")
+    }
 }
 
 $ErrorActionPreference = "Continue"
@@ -31,7 +33,7 @@ $_stdout = [IO.File]::ReadAllText("$_stdoutfile")
 Remove-Item "$_stderrfile"
 Remove-Item "$_stdoutfile"
 
-if (( "$_exitonfail" -eq "true" ) -and ("$_stderr" -ne "" )) {
+if (( "$_exitonfail" -eq "true" ) -and $_exitcode) {
     Write-Error "$_stderr"
     exit $_exitcode
 }

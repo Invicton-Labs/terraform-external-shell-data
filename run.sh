@@ -19,21 +19,24 @@ for ((i=0; i<${#ENVRNMT[@]}; i+=2)); do
     export "$_key"="$_val"
 done
 
-# If we should not exit on fail, set +e to keep going if the command fails
 set +e
     2>"$_stderrfile" >"$_stdoutfile" sh -c "$_command"
     _exitcode=$?
 set -e
 
-_stderr=$(cat "$_stderrfile" | sed -e 's/\"/__TF_MAGIC_QUOTE_STRING/g')
-_stdout=$(cat "$_stdoutfile" | sed -e 's/\"/__TF_MAGIC_QUOTE_STRING/g')
+_stderr=$(cat "$_stderrfile")
+_stdout=$(cat "$_stdoutfile")
 
 rm "$_stderrfile"
 rm "$_stdoutfile"
 
-if [ $_exitonfail == "true" ] && ! [ -z $_exitcode ] ; then
+if [ "$_exitonfail" = "true" ] && [ $_exitcode -ne 0 ] ; then
     >&2 echo "$_stderr"
     exit $_exitcode
 fi
+
+# Replace characters that can't be handled in JSON
+_stderr=$(echo "$_stderr" | sed -z 's/\n/__TF_MAGIC_NEWLINE_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
+_stdout=$(echo "$_stdout" | sed -z 's/\n/__TF_MAGIC_NEWLINE_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
 
 echo -n "{\"stderr\": \"$_stderr\", \"stdout\": \"$_stdout\", \"exitcode\": \"$_exitcode\"}"
