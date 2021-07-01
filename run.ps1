@@ -11,6 +11,7 @@ $_environment = $json.environment
 $_exitonfail = $json.exitonfail
 $_path = $json.path
 
+# Set a random that corresponds to the same limit as linux's $RANDOM
 $_id = Get-Random -Maximum 32767
 $_stderrfile = "$_path/stderr.$_id"
 $_stdoutfile = "$_path/stdout.$_id"

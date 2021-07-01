@@ -1,11 +1,8 @@
-variable "depends" {
-  description = "Equivalent to the `depends_on` input for a data/resource."
-  default     = []
+variable "command" {
+  description = "(Optional) The command to run on creation when the module is used on a Unix machine."
+  default     = null
 }
 
-variable "command" {
-  description = "The command to run on creation when the module is used on a Unix machine."
-}
 variable "command_windows" {
   description = "(Optional) The command to run on creation when the module is used on a Windows machine. If not specified, will default to be the same as the `command` variable."
   default     = null
@@ -20,7 +17,7 @@ variable "environment" {
 variable "working_dir" {
   type        = string
   default     = ""
-  description = "(Optional) The working directory where command will be executed."
+  description = "(Optional) The working directory where command will be executed. Default: the directory where the module is created."
 }
 
 variable "fail_on_error" {
