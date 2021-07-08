@@ -32,7 +32,9 @@ Remove-Item "$_stderrfile"
 Remove-Item "$_stdoutfile"
 
 if (( "$_exitonfail" -eq "true" ) -and $_exitcode) {
-    Write-Error "$_stderr"
+    if ("$_stderr") {
+        Write-Error "$_stderr"
+    }
     exit $_exitcode
 }
 
