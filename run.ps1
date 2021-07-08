@@ -6,21 +6,18 @@ set-strictmode -version 3.0
 
 $jsonpayload = [Console]::In.ReadLine()
 $json = ConvertFrom-Json $jsonpayload
-$_command = $json.command
-$_environment = $json.environment
+$_command = $json.command.Replace("__TF_MAGIC_LT_STRING", "<").Replace("__TF_MAGIC_GT_STRING", ">").Replace("__TF_MAGIC_AMP_STRING", "&").Replace("__TF_MAGIC_2028_STRING", "$([char]0x2028)").Replace("__TF_MAGIC_2029_STRING", "$([char]0x2029)")
+$_environment = ConvertFrom-Json $json.environment
 $_exitonfail = $json.exitonfail
 $_path = $json.path
 
 # Set a random that corresponds to the same limit as linux's $RANDOM
-$_id = Get-Random -Maximum 32767
+$_id = [guid]::NewGuid().ToString()
 $_stderrfile = "$_path/stderr.$_id"
 $_stdoutfile = "$_path/stdout.$_id"
 
-$_ENVRMT = $_environment.Split(";")
-if ($_ENVRMT.Count -gt 1) {
-    for (($i = 0); $i -lt $_ENVRMT.Count; $i += 2) {
-        [Environment]::SetEnvironmentVariable($_ENVRMT[$i], $_ENVRMT[$i + 1], "Process")
-    }
+foreach ($env in $_environment.PSObject.Properties) {
+    [Environment]::SetEnvironmentVariable($env.Name, $env.Value.Replace("__TF_MAGIC_LT_STRING", "<").Replace("__TF_MAGIC_GT_STRING", ">").Replace("__TF_MAGIC_AMP_STRING", "&").Replace("__TF_MAGIC_2028_STRING", "$([char]0x2028)").Replace("__TF_MAGIC_2029_STRING", "$([char]0x2029)"), "Process") 
 }
 
 $ErrorActionPreference = "Continue"

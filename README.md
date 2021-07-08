@@ -8,9 +8,9 @@ This module provides a wrapper for running shell scripts as data sources (re-run
 
 # Usage
 ```
-module "shell-data-hello" {
+module "shell_data_hello" {
   source  = "Invicton-Labs/shell-data/external"
-  command         = "echo \"$TEXT - $MORETEXT\""
+  command_unix         = "echo \"$TEXT - $MORETEXT\""
   command_windows = "Write-Host \"$env:TEXT - $env:MORETEXT\""
   working_dir     = path.module
   fail_on_error   = true
