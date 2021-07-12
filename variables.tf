@@ -1,11 +1,11 @@
 variable "command_unix" {
-  description = "(Optional) The command to run on creation when the module is used on a Unix machine. If not specified, will default to be the same as the `command_windows` variable."
+  description = "The command to run on creation when the module is used on a Unix machine. If not specified, will default to be the same as the `command_windows` variable."
   type        = string
   default     = null
 }
 
 variable "command_windows" {
-  description = "(Optional) The command to run on creation when the module is used on a Windows machine. If not specified, will default to be the same as the `command_unix` variable."
+  description = "The command to run on creation when the module is used on a Windows machine. If not specified, will default to be the same as the `command_unix` variable."
   type        = string
   default     = null
 }
@@ -13,7 +13,13 @@ variable "command_windows" {
 variable "environment" {
   type        = map(string)
   default     = {}
-  description = "Map of environment variables to pass to the command."
+  description = "Map of environment variables to pass to the command. Will be merged with `sensitive_environment` (those values will overwrite these values with the same key)."
+}
+
+variable "sensitive_environment" {
+  type        = map(string)
+  default     = {}
+  description = "Map of (sentitive) environment variables to pass to the command. Will be merged with `environment` (this overwrites those values with the same key), but will not be shown in the Terraform plan output."
 }
 
 variable "working_dir" {

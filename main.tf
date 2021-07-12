@@ -15,16 +15,17 @@ locals {
   command_replaced = replace(replace(replace(replace(replace(local.command, "<", "__TF_MAGIC_LT_STRING"), ">", "__TF_MAGIC_GT_STRING"), "&", "__TF_MAGIC_AMP_STRING"), "\u2028", "__TF_MAGIC_2028_STRING"), "\u2029", "__TF_MAGIC_2029_STRING")
   // Replace each character in the environment values that Terraform's jsonencode tries to replace
   environment = {
-    for k, v in var.environment :
+    for k, v in merge(var.environment, var.sensitive_environment) :
     k => replace(replace(replace(replace(replace(v, "<", "__TF_MAGIC_LT_STRING"), ">", "__TF_MAGIC_GT_STRING"), "&", "__TF_MAGIC_AMP_STRING"), "\u2028", "__TF_MAGIC_2028_STRING"), "\u2029", "__TF_MAGIC_2029_STRING")
   }
+  encoded_environment = local.is_windows ? jsonencode(local.environment) : replace(replace(replace(join(";", flatten([for k, v in local.environment : [replace(k, ";", "__TF_MAGIC_SC_STRING"), replace(v, ";", "__TF_MAGIC_SC_STRING")]])), "\"", "__TF_MAGIC_QUOTE_STRING"), "\t", "__TF_MAGIC_TAB_STRING"), "\\", "__TF_MAGIC_BACKSLASH_STRING")
 }
 
 data "external" "run" {
   program = local.interpreter
   query = {
     command     = local.command_replaced
-    environment = local.is_windows ? jsonencode(local.environment) : replace(replace(replace(join(";", flatten([for k, v in local.environment : [replace(k, ";", "__TF_MAGIC_SC_STRING"), replace(v, ";", "__TF_MAGIC_SC_STRING")]])), "\"", "__TF_MAGIC_QUOTE_STRING"), "\t", "__TF_MAGIC_TAB_STRING"), "\\", "__TF_MAGIC_BACKSLASH_STRING")
+    environment = length(var.sensitive_environment) > 0 ? sensitive(local.encoded_environment) : local.encoded_environment
     exitonfail  = var.fail_on_error ? "true" : "false"
     path        = local.is_windows ? local.temporary_dir : replace(local.temporary_dir, "\"", "__TF_MAGIC_QUOTE_STRING")
   }
