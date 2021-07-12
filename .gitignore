@@ -31,3 +31,4 @@ override.tf.json
 # Ignore temporary output files
 /stdout.*
 /stderr.*
+/exitstatus.*
