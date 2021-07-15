@@ -6,6 +6,8 @@ This module provides a wrapper for running shell scripts as data sources (re-run
 - Built-in support for both Linux and Windows
 - Optional Terraform failure when an error in the given command occurs
 
+For a similar module that **runs as a resource** (only re-runs the command on resource re-create or on a change in a trigger), see [this module](https://registry.terraform.io/modules/Invicton-Labs/shell-resource/external/latest) on the Terraform Registry.
+
 # Usage
 ```
 module "shell_data_hello" {
