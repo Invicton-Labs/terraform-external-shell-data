@@ -36,7 +36,7 @@ if [ "$_exitonfail" = "true" ] && [ $_exitcode -ne 0 ] ; then
 fi
 
 # Replace characters that can't be handled in JSON
-_stderr=$(echo "$_stderr" | sed -z 's/\n/__TF_MAGIC_NEWLINE_STRING/g;s/\r/__TF_MAGIC_CR_STRING/g;s/\t/__TF_MAGIC_TAB_STRING/g;s/\\/__TF_MAGIC_BACKSLASH_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
-_stdout=$(echo "$_stdout" | sed -z 's/\n/__TF_MAGIC_NEWLINE_STRING/g;s/\r/__TF_MAGIC_CR_STRING/g;s/\t/__TF_MAGIC_TAB_STRING/g;s/\\/__TF_MAGIC_BACKSLASH_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
+_stderr=$(echo "$_stderr" | tr -d '\000-\010\013\014\016-\037' | sed -z 's/\n/__TF_MAGIC_NEWLINE_STRING/g;s/\r/__TF_MAGIC_CR_STRING/g;s/\t/__TF_MAGIC_TAB_STRING/g;s/\\/__TF_MAGIC_BACKSLASH_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
+_stdout=$(echo "$_stdout" | tr -d '\000-\010\013\014\016-\037' | sed -z 's/\n/__TF_MAGIC_NEWLINE_STRING/g;s/\r/__TF_MAGIC_CR_STRING/g;s/\t/__TF_MAGIC_TAB_STRING/g;s/\\/__TF_MAGIC_BACKSLASH_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
 
 echo -n "{\"stderr\": \"$_stderr\", \"stdout\": \"$_stdout\", \"exitcode\": \"$_exitcode\"}"
