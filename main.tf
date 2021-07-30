@@ -10,7 +10,6 @@ locals {
   // If command_windows is specified, use it. Otherwise, if command_unixs is specified, use it. Otherwise, use a command that does nothing ("% ':'")
   command_windows  = chomp(var.command_windows != null ? var.command_windows : (var.command_unix != null ? var.command_unix : "% ':'"))
   temporary_dir    = abspath(path.module)
-  interpreter      = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : ["${abspath(path.module)}/run.sh"]
   command          = local.is_windows ? local.command_windows : local.command_unix
   command_replaced = replace(replace(replace(replace(replace(local.command, "<", "__TF_MAGIC_LT_STRING"), ">", "__TF_MAGIC_GT_STRING"), "&", "__TF_MAGIC_AMP_STRING"), "\u2028", "__TF_MAGIC_2028_STRING"), "\u2029", "__TF_MAGIC_2029_STRING")
   // Replace each character in the environment values that Terraform's jsonencode tries to replace
@@ -22,7 +21,7 @@ locals {
 }
 
 data "external" "run" {
-  program = local.interpreter
+  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : ["${abspath(path.module)}/run.sh"]
   query = {
     command     = local.command_replaced
     environment = length(var.sensitive_environment) > 0 ? sensitive(local.encoded_environment) : local.encoded_environment
@@ -32,8 +31,21 @@ data "external" "run" {
   working_dir = var.working_dir
 }
 
+data "external" "delete" {
+  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/delete.ps1"] : ["${abspath(path.module)}/delete.sh"]
+  depends_on = [
+    data.external.run
+  ]
+  query = {
+    stderrfile = data.external.run.result.stderrfile
+    stdoutfile = data.external.run.result.stdoutfile
+  }
+  // Use this to force it to wait until stdout and stderr have been read
+  working_dir = local.stderr == null || local.stdout == null ? var.working_dir : var.working_dir
+}
+
 locals {
-  stdout   = chomp(local.is_windows ? data.external.run.result.stdout : replace(replace(replace(replace(replace(data.external.run.result.stdout, "__TF_MAGIC_QUOTE_STRING", "\""), "__TF_MAGIC_NEWLINE_STRING", "\n"), "__TF_MAGIC_CR_STRING", "\r"), "__TF_MAGIC_TAB_STRING", "\t"), "__TF_MAGIC_BACKSLASH_STRING", "\\"))
-  stderr   = chomp(local.is_windows ? data.external.run.result.stderr : replace(replace(replace(replace(replace(data.external.run.result.stderr, "__TF_MAGIC_QUOTE_STRING", "\""), "__TF_MAGIC_NEWLINE_STRING", "\n"), "__TF_MAGIC_CR_STRING", "\r"), "__TF_MAGIC_TAB_STRING", "\t"), "__TF_MAGIC_BACKSLASH_STRING", "\\"))
+  stderr   = chomp(fileexists(data.external.run.result.stderrfile) ? file(data.external.run.result.stderrfile) : "")
+  stdout   = chomp(fileexists(data.external.run.result.stdoutfile) ? file(data.external.run.result.stdoutfile) : "")
   exitcode = tonumber(chomp(data.external.run.result.exitcode))
 }

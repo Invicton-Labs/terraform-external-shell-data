@@ -26,10 +26,6 @@ $_exitcode = $_process.ExitCode
 $ErrorActionPreference = "Stop"
 
 $_stderr = [IO.File]::ReadAllText("$_stderrfile")
-$_stdout = [IO.File]::ReadAllText("$_stdoutfile")
-
-Remove-Item "$_stderrfile"
-Remove-Item "$_stdoutfile"
 
 if (( "$_exitonfail" -eq "true" ) -and $_exitcode) {
     if ("$_stderr") {
@@ -39,7 +35,7 @@ if (( "$_exitonfail" -eq "true" ) -and $_exitcode) {
 }
 
 @{
-    stderr   = "$_stderr"
-    stdout   = "$_stdout"
-    exitcode = "$_exitcode"
+    stderrfile = "$_stderrfile"
+    stdoutfile = "$_stdoutfile"
+    exitcode   = "$_exitcode"
 } | ConvertTo-Json

@@ -25,18 +25,10 @@ set +e
 set -e
 
 _stderr=$(cat "$_stderrfile")
-_stdout=$(cat "$_stdoutfile")
-
-rm "$_stderrfile"
-rm "$_stdoutfile"
 
 if [ "$_exitonfail" = "true" ] && [ $_exitcode -ne 0 ] ; then
     >&2 echo "$_stderr"
     exit $_exitcode
 fi
 
-# Replace characters that can't be handled in JSON
-_stderr=$(echo "$_stderr" | tr -d '\000-\010\013\014\016-\037' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/__TF_MAGIC_NEWLINE_STRING/g' | sed 's/\r/__TF_MAGIC_CR_STRING/g;s/\t/__TF_MAGIC_TAB_STRING/g;s/\\/__TF_MAGIC_BACKSLASH_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
-_stdout=$(echo "$_stdout" | tr -d '\000-\010\013\014\016-\037' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/__TF_MAGIC_NEWLINE_STRING/g' | sed 's/\r/__TF_MAGIC_CR_STRING/g;s/\t/__TF_MAGIC_TAB_STRING/g;s/\\/__TF_MAGIC_BACKSLASH_STRING/g;s/\"/__TF_MAGIC_QUOTE_STRING/g')
-
-echo -n "{\"stderr\": \"$_stderr\", \"stdout\": \"$_stdout\", \"exitcode\": \"$_exitcode\"}"
+echo -n "{\"stderrfile\": \"$_stderrfile\", \"stdoutfile\": \"$_stdoutfile\", \"exitcode\": \"$_exitcode\"}"
