@@ -1,13 +1,14 @@
 output "stdout" {
-  // If it was in Linux, we must replace the magic string with quotes
+  description = "The stdout output of the shell command."
   value = local.stdout
 }
 
 output "stderr" {
-  // If it was in Linux, we must replace the magic string with quotes
+  description = "The stderr output of the shell command."
   value = local.stderr
 }
 
 output "exitstatus" {
+  description = "The exit status code of the shell command."
   value = local.exitcode
 }
