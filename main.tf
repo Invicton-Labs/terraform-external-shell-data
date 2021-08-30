@@ -18,6 +18,7 @@ locals {
     k => replace(replace(replace(replace(replace(v, "<", "__TF_MAGIC_LT_STRING"), ">", "__TF_MAGIC_GT_STRING"), "&", "__TF_MAGIC_AMP_STRING"), "\u2028", "__TF_MAGIC_2028_STRING"), "\u2029", "__TF_MAGIC_2029_STRING")
   }
   encoded_environment = local.is_windows ? jsonencode(local.environment) : replace(replace(replace(join(";", flatten([for k, v in local.environment : [replace(k, ";", "__TF_MAGIC_SC_STRING"), replace(v, ";", "__TF_MAGIC_SC_STRING")]])), "\"", "__TF_MAGIC_QUOTE_STRING"), "\t", "__TF_MAGIC_TAB_STRING"), "\\", "__TF_MAGIC_BACKSLASH_STRING")
+  wait_for_apply      = var.force_wait_for_apply ? uuid() : null
 }
 
 data "external" "run" {
@@ -28,7 +29,7 @@ data "external" "run" {
     exitonfail  = var.fail_on_error ? "true" : "false"
     path        = local.is_windows ? local.temporary_dir : replace(local.temporary_dir, "\"", "__TF_MAGIC_QUOTE_STRING")
   }
-  working_dir = var.working_dir
+  working_dir = local.wait_for_apply == null ? var.working_dir : var.working_dir
 }
 
 data "external" "delete" {
