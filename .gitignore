@@ -32,3 +32,4 @@ override.tf.json
 /stdout.*
 /stderr.*
 /exitstatus.*
+/cmd.*

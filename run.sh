@@ -27,6 +27,10 @@ set -e
 _stderr=$(cat "$_stderrfile")
 
 if [ "$_exitonfail" = "true" ] && [ $_exitcode -ne 0 ] ; then
+    # Since we're exiting with an error code, we don't need to read the output files in the Terraform config,
+    # and we won't get a chance to delete them via Terraform, so delete them now
+    rm -f "$_stderrfile"
+    rm -f "$_stdoutfile"
     >&2 echo "$_stderr"
     exit $_exitcode
 fi
