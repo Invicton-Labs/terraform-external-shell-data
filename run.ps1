@@ -17,7 +17,10 @@ $_stdoutfile = "$_path/stdout.$_id"
 $_cmdfile = "$_path/cmd.$_id.ps1"
 
 # Write the command to a file to execute from
-$json.command.Replace("__TF_MAGIC_LT_STRING", "<").Replace("__TF_MAGIC_GT_STRING", ">").Replace("__TF_MAGIC_AMP_STRING", "&").Replace("__TF_MAGIC_2028_STRING", "$([char]0x2028)").Replace("__TF_MAGIC_2029_STRING", "$([char]0x2029)") | Out-File -FilePath "$_cmdfile"
+# First start with a command that causes the script to exit if an error is thrown
+Write-Output '$ErrorActionPreference = "Stop"' | Out-File -FilePath "$_cmdfile"
+# Now write the command itself 
+$json.command.Replace("__TF_MAGIC_LT_STRING", "<").Replace("__TF_MAGIC_GT_STRING", ">").Replace("__TF_MAGIC_AMP_STRING", "&").Replace("__TF_MAGIC_2028_STRING", "$([char]0x2028)").Replace("__TF_MAGIC_2029_STRING", "$([char]0x2029)") | Out-File -Append -FilePath "$_cmdfile"
 
 foreach ($env in $_environment.PSObject.Properties) {
     [Environment]::SetEnvironmentVariable($env.Name, $env.Value.Replace("__TF_MAGIC_LT_STRING", "<").Replace("__TF_MAGIC_GT_STRING", ">").Replace("__TF_MAGIC_AMP_STRING", "&").Replace("__TF_MAGIC_2028_STRING", "$([char]0x2028)").Replace("__TF_MAGIC_2029_STRING", "$([char]0x2029)"), "Process") 

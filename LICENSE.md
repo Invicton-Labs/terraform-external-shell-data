@@ -1,4 +1,4 @@
-### Copyright (c) 2021 [Invicton Labs](https://invictonlabs.com)
+### Copyright (c) 2021-2022 [Invicton Labs](https://invictonlabs.com)
 
 # Creative Commons Attribution 4.0 International
 
