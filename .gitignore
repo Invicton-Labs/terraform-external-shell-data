@@ -29,7 +29,5 @@ override.tf.json
 # example: *tfplan*
 
 # Ignore temporary output files
-/stdout.*
-/stderr.*
-/exitstatus.*
-/cmd.*
+/tmpfiles/*
+!/tmpfiles/.gitkeep

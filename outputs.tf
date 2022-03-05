@@ -1,14 +1,14 @@
 output "stdout" {
   description = "The stdout output of the shell command."
-  value = local.stdout
+  value       = local.stdout
 }
 
 output "stderr" {
   description = "The stderr output of the shell command."
-  value = local.stderr
+  value       = local.stderr
 }
 
-output "exitstatus" {
+output "exit_code" {
   description = "The exit status code of the shell command."
-  value = local.exitcode
+  value       = local.exitcode
 }

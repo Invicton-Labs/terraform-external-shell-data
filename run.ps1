@@ -6,54 +6,65 @@ set-strictmode -version 3.0
 
 $jsonpayload = [Console]::In.ReadLine()
 $json = ConvertFrom-Json $jsonpayload
-$_environment = ConvertFrom-Json $json.environment
-$_exitonfail = $json.exitonfail
-$_path = $json.path
 
-# Set a random that corresponds to the same limit as linux's $RANDOM
+$_directory = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.directory))
+$_command = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.command))
+$_environment = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.environment))
+$_exit_on_nonzero = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_nonzero))
+$_exit_on_stderr = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_stderr))
+
+# Generate a random/unique ID
 $_id = [guid]::NewGuid().ToString()
-$_stderrfile = "$_path/stderr.$_id"
-$_stdoutfile = "$_path/stdout.$_id"
-$_cmdfile = "$_path/cmd.$_id.ps1"
+$_cmdfile = "$_directory/$_id.ps1"
+$_stderrfile = "$_directory/$_id.stderr"
+$_stdoutfile = "$_directory/$_id.stdout"
 
-# Write the command to a file to execute from
-# First start with a command that causes the script to exit if an error is thrown
-Write-Output '$ErrorActionPreference = "Stop"' | Out-File -FilePath "$_cmdfile"
-# Now write the command itself 
-$json.command.Replace("__TF_MAGIC_LT_STRING", "<").Replace("__TF_MAGIC_GT_STRING", ">").Replace("__TF_MAGIC_AMP_STRING", "&").Replace("__TF_MAGIC_2028_STRING", "$([char]0x2028)").Replace("__TF_MAGIC_2029_STRING", "$([char]0x2029)") | Out-File -Append -FilePath "$_cmdfile"
-# Always force the command file to exit with the last exit code
-Write-Output 'Exit $LASTEXITCODE' | Out-File -Append -FilePath "$_cmdfile"
-
-foreach ($env in $_environment.PSObject.Properties) {
-    [Environment]::SetEnvironmentVariable($env.Name, $env.Value.Replace("__TF_MAGIC_LT_STRING", "<").Replace("__TF_MAGIC_GT_STRING", ">").Replace("__TF_MAGIC_AMP_STRING", "&").Replace("__TF_MAGIC_2028_STRING", "$([char]0x2028)").Replace("__TF_MAGIC_2029_STRING", "$([char]0x2029)"), "Process") 
+# Set the environment variables
+$_env_vars = $_environment.Split(";")
+foreach ($env in $_env_vars) {
+    $_env_parts = $env.Split(":")
+    [Environment]::SetEnvironmentVariable($_env_parts[0], [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_env_parts[1])), "Process") 
 }
+
+# Write the command to a file
+Write-Output "$_command" | Out-File -Encoding utf8 -FilePath "$_cmdfile"
 
 $ErrorActionPreference = "Continue"
 $_process = Start-Process powershell.exe -ArgumentList "-file ""$_cmdfile""" -Wait -PassThru -NoNewWindow -RedirectStandardError "$_stderrfile" -RedirectStandardOutput "$_stdoutfile"
 $_exitcode = $_process.ExitCode
 $ErrorActionPreference = "Stop"
 
-# Delete the command file
+# Read the stderr and stdout files
+$_stdout = [System.IO.File]::ReadAllBytes($_stdoutfile)
+$_stderr = [System.IO.File]::ReadAllBytes($_stderrfile)
+
+# Delete the files
 Remove-Item "$_cmdfile"
+Remove-Item "$_stderrfile"
+Remove-Item "$_stdoutfile"
 
-# If we want to kill Terraform on a failure, and there was a non-zero exit code, write the error out
-if (( "$_exitonfail" -eq "true" ) -and $_exitcode) {
-    # Read the error content from the error file
-    $_stderr = [IO.File]::ReadAllText("$_stderrfile")
-
-    # Since we're exiting with an error code, we don't need to read the output files in the Terraform config,
-    # and we won't get a chance to delete them via Terraform, so delete them now
-    Remove-Item "$_stderrfile" -ErrorAction Ignore
-    Remove-Item "$_stdoutfile" -ErrorAction Ignore
-
+# If we want to kill Terraform on a non-zero exit code and the exit code was non-zero, OR
+# we want to kill Terraform on a non-empty stderr and the stderr was non-empty
+if ((( "$_exit_on_nonzero" -eq "true" ) -and $_exitcode) -or (( "$_exit_on_stderr" -eq "true" ) -and "$_stderr")) {
+    # If there was a stderr, write it out as an error
     if ("$_stderr") {
-        Write-Error "$_stderr"
+        # Since we read the stderr as bytes, convert it to ASCII for display
+        $_stderr_string = [System.Text.Encoding]::ASCII.GetString($_stderr)
+        # Set continue to not kill the process on writing an error, so we can exit with the desired exit code
+        $ErrorActionPreference = "Continue"
+        Write-Error "$_stderr_string"
+        $ErrorActionPreference = "Stop"
     }
-    exit $_exitcode
+    # If a non-zero exit code was given, exit with it
+    if ($_exitcode) {
+        exit $_exitcode
+    }
+    # Otherwise, exit with a default non-zero exit code
+    exit 1
 }
 
 @{
-    stderrfile = "$_stderrfile"
-    stdoutfile = "$_stdoutfile"
-    exitcode   = "$_exitcode"
+    stderr   = [System.Convert]::ToBase64String($_stderr)
+    stdout   = [System.Convert]::ToBase64String($_stdout)
+    exitcode = "$_exitcode"
 } | ConvertTo-Json

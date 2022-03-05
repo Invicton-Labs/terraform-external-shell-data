@@ -1,52 +1,64 @@
-terraform {
-  required_version = ">= 0.13.0"
-}
-
 locals {
   is_windows = dirname("/") == "\\"
-  // If command_unix is specified, use it. Otherwise, if command_windows is specified, use it. Otherwise, use a command that does nothing (":")
-  // Then replace all quotes in the resulting command with a magic string
-  command_unix = replace(replace(replace(chomp(var.command_unix != null ? var.command_unix : (var.command_windows != null ? var.command_windows : ":")), "\"", "__TF_MAGIC_QUOTE_STRING"), "\t", "__TF_MAGIC_TAB_STRING"), "\\", "__TF_MAGIC_BACKSLASH_STRING")
-  // If command_windows is specified, use it. Otherwise, if command_unixs is specified, use it. Otherwise, use a command that does nothing ("% ':'")
-  command_windows  = chomp(var.command_windows != null ? var.command_windows : (var.command_unix != null ? var.command_unix : "% ':'"))
-  temporary_dir    = abspath(path.module)
-  command          = local.is_windows ? local.command_windows : local.command_unix
-  command_replaced = replace(replace(replace(replace(replace(local.command, "<", "__TF_MAGIC_LT_STRING"), ">", "__TF_MAGIC_GT_STRING"), "&", "__TF_MAGIC_AMP_STRING"), "\u2028", "__TF_MAGIC_2028_STRING"), "\u2029", "__TF_MAGIC_2029_STRING")
-  // Replace each character in the environment values that Terraform's jsonencode tries to replace
-  environment = {
-    for k, v in merge(var.environment, var.sensitive_environment) :
-    k => replace(replace(replace(replace(replace(v, "<", "__TF_MAGIC_LT_STRING"), ">", "__TF_MAGIC_GT_STRING"), "&", "__TF_MAGIC_AMP_STRING"), "\u2028", "__TF_MAGIC_2028_STRING"), "\u2029", "__TF_MAGIC_2029_STRING")
-  }
-  encoded_environment = local.is_windows ? jsonencode(local.environment) : replace(replace(replace(join(";", flatten([for k, v in local.environment : [replace(k, ";", "__TF_MAGIC_SC_STRING"), replace(v, ";", "__TF_MAGIC_SC_STRING")]])), "\"", "__TF_MAGIC_QUOTE_STRING"), "\t", "__TF_MAGIC_TAB_STRING"), "\\", "__TF_MAGIC_BACKSLASH_STRING")
-  wait_for_apply      = var.force_wait_for_apply ? uuid() : null
+
+  // If `force_wait_for_apply` is set to `true`, this will not return a value
+  // until the apply step, thereby forcing the external data to wait for the apply step
+  wait_for_apply = var.force_wait_for_apply ? uuid() : null
+
+  # These are commands that have no effect
+  null_command_unix    = ":"
+  null_command_windows = "% ':'"
+
+  // If command_unix is specified, use it. Otherwise, if command_windows is specified, use it. Otherwise, use a command that does nothing
+  command_unix = chomp(var.command_unix != null ? var.command_unix : (var.command_windows != null ? var.command_windows : local.null_command_unix))
+  // If command_windows is specified, use it. Otherwise, if command_unixs is specified, use it. Otherwise, use a command that does nothing
+  command_windows = chomp(var.command_windows != null ? var.command_windows : (var.command_unix != null ? var.command_unix : local.null_command_windows))
+
+  // Select the command based on the operating system
+  command = local.is_windows ? local.command_windows : local.command_unix
+
+  // The directory where temporary files should be stored
+  temporary_dir = abspath("${path.module}/tmpfiles")
+
+  // A magic string that we use as a separator. It contains a UUID, so in theory, should
+  // be a globally unique ID that will never appear in input content
+  unix_query_separator = "__59077cc7e1934758b19d469c410613a7_TF_MAGIC_SEGMENT_SEPARATOR"
+
+  // Generate the environment variable file
+  env_file_content = join(";", [
+    for k, v in var.environment :
+    "${k}:${base64encode(v)}"
+  ])
 }
 
+// Run the command
 data "external" "run" {
-  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : ["${abspath(path.module)}/run.sh"]
-  query = {
-    command     = local.command_replaced
-    environment = length(var.sensitive_environment) > 0 ? sensitive(local.encoded_environment) : local.encoded_environment
-    exitonfail  = var.fail_on_error ? "true" : "false"
-    path        = local.is_windows ? local.temporary_dir : replace(local.temporary_dir, "\"", "__TF_MAGIC_QUOTE_STRING")
-  }
+  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : ["bash", "${abspath(path.module)}/run.sh"]
+  // Mark the query as sensitive just so it doesn't show up in the plan output.
+  // Since it's all base64-encoded anyways, showing it in the plan wouldn't be useful
+  query = sensitive(local.is_windows ? {
+    // If it's Windows, use the query parameter normally since PowerShell can natively handle JSON decoding
+    directory       = base64encode(local.temporary_dir)
+    command         = base64encode("${local.command}\n${local.is_windows ? "Exit $LASTEXITCODE" : "exit $?"}")
+    environment     = base64encode(local.env_file_content)
+    exit_on_nonzero = base64encode(var.fail_on_nonzero_exit_code ? "true" : "false")
+    exit_on_stderr  = base64encode(var.fail_on_stderr ? "true" : "false")
+    } : {
+    // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in bash, 
+    // without needing to install jq
+    "" = join("", [local.unix_query_separator, join(local.unix_query_separator, [
+      base64encode(local.temporary_dir),
+      base64encode("${local.command}\n${local.is_windows ? "Exit $LASTEXITCODE" : "exit $?"}"),
+      base64encode(local.env_file_content),
+      base64encode(var.fail_on_nonzero_exit_code ? "true" : "false"),
+      base64encode(var.fail_on_stderr ? "true" : "false")
+    ]), local.unix_query_separator])
+  })
   working_dir = local.wait_for_apply == null ? var.working_dir : var.working_dir
 }
 
-data "external" "delete" {
-  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/delete.ps1"] : ["${abspath(path.module)}/delete.sh"]
-  depends_on = [
-    data.external.run
-  ]
-  query = {
-    stderrfile = data.external.run.result.stderrfile
-    stdoutfile = data.external.run.result.stdoutfile
-  }
-  // Use this to force it to wait until stdout and stderr have been read
-  working_dir = local.stderr == null || local.stdout == null ? var.working_dir : var.working_dir
-}
-
 locals {
-  stderr   = chomp(fileexists(data.external.run.result.stderrfile) ? file(data.external.run.result.stderrfile) : "")
-  stdout   = chomp(fileexists(data.external.run.result.stdoutfile) ? file(data.external.run.result.stdoutfile) : "")
-  exitcode = tonumber(chomp(data.external.run.result.exitcode))
+  stderr   = chomp(base64decode(data.external.run.result.stderr))
+  stdout   = chomp(base64decode(data.external.run.result.stdout))
+  exitcode = tonumber(trimspace(data.external.run.result.exitcode))
 }
