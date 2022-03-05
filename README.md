@@ -12,10 +12,10 @@ For a similar module that **runs as a resource** (only re-runs the command on re
 ```
 module "shell_data_hello" {
   source  = "Invicton-Labs/shell-data/external"
-  command_unix         = "echo \"$TEXT - $MORETEXT\""
-  command_windows = "Write-Host \"$env:TEXT - $env:MORETEXT\""
-  working_dir     = path.module
-  fail_on_error   = true
+  command_unix              = "echo \"$TEXT - $MORETEXT\""
+  command_windows           = "Write-Host \"$env:TEXT - $env:MORETEXT\""
+  working_dir               = path.module
+  fail_on_nonzero_exit_code = true
   environment = {
     TEXT     = "hello world"
     MORETEXT = "goodbye world"
