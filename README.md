@@ -18,6 +18,9 @@ module "shell_data_hello" {
   source  = "Invicton-Labs/shell-data/external"
 
   // This is the command that will be run on Unix-based systems
+  // If you wanted to, you could use the file() function to read 
+  // this command from a local file instead of specifying it as
+  // a string.
   command_unix = <<EOF
 echo "$TEXT - $MORETEXT"
 echo "Env vars can also be multi-line: $MULTILINE_ENV_VAR"
