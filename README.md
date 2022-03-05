@@ -12,23 +12,58 @@ For a similar module that **runs as a resource** (only re-runs the command on re
 ```
 module "shell_data_hello" {
   source  = "Invicton-Labs/shell-data/external"
-  command_unix              = "echo \"$TEXT - $MORETEXT\""
-  command_windows           = "Write-Host \"$env:TEXT - $env:MORETEXT\""
-  working_dir               = path.module
-  fail_on_nonzero_exit_code = true
+
+    // This is the command that will be run on Unix-based systems
+  command_unix = <<EOF
+echo "$TEXT - $MORETEXT"
+echo "Env vars can also be multi-line: $MULTILINE_ENV_VAR"
+>&2 echo "This is an error"
+EOF
+
+  // This is the command that will be run on Windows-based systems
+  command_windows = <<EOF
+Write-Host "$env:TEXT - $env:MORETEXT"
+Write-Host "Env vars can also be multi-line: $env:MULTILINE_ENV_VAR"
+Write-Error "This is an error"
+EOF
+
+  // Environment variables that will be available for the command.
+  // All Terraform environment variables and default shell environment
+  // variables will also be available.
   environment = {
-    TEXT     = "hello world"
-    MORETEXT = "goodbye world"
+    TEXT              = "hello world"
+    MORETEXT          = "goodbye world"
+    MULTILINE_ENV_VAR = <<EOF
+
+	Env var line 1 (tab-indented)
+	Env var line 2 (tab-indented)
+EOF
   }
+
+  working_dir = path.module
+
+  // If the command exits with a non-zero exit code, kill Terraform.
+  // This is enabled by default because generally we want our commands to succeed.
+  fail_on_nonzero_exit_code = true
+
+  // We can optionally also kill Terraform if the command writes anything to stderr.
+  // This is disabled by default because many commands write to stderr even if nothing went wrong.
+  fail_on_stderr = false
+
+  // We can optionally force it to wait for the apply step before running the command
+  // If any of the inputs (command, environment vars) aren't known during the plan step,
+  // then it will always wait for apply, regardless of this setting.
+  force_wait_for_apply = false
 }
+
 output "stdout" {
-  value = module.shell-data-hello.stdout
+  value = module.shell_data_hello.stdout
 }
 output "stderr" {
-  value = module.shell-data-hello.stderr
+  value = module.shell_data_hello.stderr
 }
 output "exit_code" {
-  value = module.shell-data-hello.exit_code
+  value = module.shell_data_hello.exit_code
 }
 ```
 
@@ -38,6 +73,11 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 Outputs:
 
 exit_code = 0
-stderr = ""
-stdout = "hello world - goodbye world"
+stderr = "This is an error"
+stdout = <<EOT
+hello world - goodbye world
+Env vars can also be multi-line:
+        Env var line 1 (tab-indented)
+        Env var line 2 (tab-indented)
+EOT
 ```
