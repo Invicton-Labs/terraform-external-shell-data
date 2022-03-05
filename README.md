@@ -2,7 +2,7 @@
 
 This module provides a wrapper for running shell scripts as data sources (re-run on every plan/apply) and capturing the output. Unlike Terraform's standard [External Data Source](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/data_source), this module supports:
 - Environment variables
-- Capturing `stdout`, `stderr`, and `exitstatus` of the command
+- Capturing `stdout`, `stderr`, and `exit_code` of the command
 - Built-in support for both Linux and Windows
 - Optional Terraform failure when an error in the given command occurs
 
@@ -27,8 +27,8 @@ output "stdout" {
 output "stderr" {
   value = module.shell-data-hello.stderr
 }
-output "exitstatus" {
-  value = module.shell-data-hello.exitstatus
+output "exit_code" {
+  value = module.shell-data-hello.exit_code
 }
 ```
 
@@ -37,7 +37,7 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-exitstatus = 0
+exit_code = 0
 stderr = ""
 stdout = "hello world - goodbye world"
 ```
