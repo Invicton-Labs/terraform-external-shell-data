@@ -3,8 +3,12 @@
 This module provides a wrapper for running shell scripts as data sources (re-run on every plan/apply) and capturing the output. Unlike Terraform's standard [External Data Source](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/data_source), this module supports:
 - Environment variables
 - Capturing `stdout`, `stderr`, and `exit_code` of the command
-- Built-in support for both Linux and Windows
+- Built-in support for both Unix and Windows
 - Optional Terraform failure when an error in the given command occurs
+
+For Windows, this module should work on any system that supports a relatively modern version of PowerShell.
+
+For Unix, this module should work on any system that supports `sed` and `base64` (which is the vast majority of out-of-the-box systems).
 
 For a similar module that **runs as a resource** (only re-runs the command on resource re-create or on a change in a trigger), see [this module](https://registry.terraform.io/modules/Invicton-Labs/shell-resource/external/latest) on the Terraform Registry.
 
