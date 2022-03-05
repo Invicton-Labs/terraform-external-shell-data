@@ -17,7 +17,7 @@ For a similar module that **runs as a resource** (only re-runs the command on re
 module "shell_data_hello" {
   source  = "Invicton-Labs/shell-data/external"
 
-    // This is the command that will be run on Unix-based systems
+  // This is the command that will be run on Unix-based systems
   command_unix = <<EOF
 echo "$TEXT - $MORETEXT"
 echo "Env vars can also be multi-line: $MULTILINE_ENV_VAR"
