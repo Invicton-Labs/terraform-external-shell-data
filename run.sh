@@ -21,6 +21,9 @@ _stdoutfile="$_directory/$_id.stdout"
 # a semicolon.
 IFS=';' read -ra ENVRNMT <<< "$_environment"
 for _env in "${ENVRNMT[@]}"; do
+    if [ -z "$_env" ]; then
+        continue
+    fi
     # For each env var, split it on a colon. We use colons because we know
     # that neither the env var name nor the base64-encoded value will contain
     # a colon.
@@ -32,6 +35,9 @@ done
 
 # Write the command to a file
 echo -e "$_command" > "$_cmdfile"
+
+# Always force the command file to exit with the last exit code
+echo 'exit $?' >> "$_cmdfile"
 
 set +e
     2>"$_stderrfile" >"$_stdoutfile" bash "$_cmdfile"

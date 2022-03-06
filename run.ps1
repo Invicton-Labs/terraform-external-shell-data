@@ -21,13 +21,19 @@ $_stdoutfile = "$_directory/$_id.stdout"
 
 # Set the environment variables
 $_env_vars = $_environment.Split(";")
-foreach ($env in $_env_vars) {
-    $_env_parts = $env.Split(":")
+foreach ($_env in $_env_vars) {
+    if ( "$_env" -eq "" ) {
+        continue
+    }
+    $_env_parts = $_env.Split(":")
     [Environment]::SetEnvironmentVariable($_env_parts[0], [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_env_parts[1])), "Process") 
 }
 
 # Write the command to a file
-Write-Output "$_command" | Out-File -Encoding utf8 -FilePath "$_cmdfile"
+[System.IO.File]::WriteAllText("$_cmdfile", "$_command")
+
+# Always force the command file to exit with the last exit code
+[System.IO.File]::AppendAllText("$_cmdfile", "`n`nExit `$LASTEXITCODE")
 
 $ErrorActionPreference = "Continue"
 $_process = Start-Process powershell.exe -ArgumentList "-file ""$_cmdfile""" -Wait -PassThru -NoNewWindow -RedirectStandardError "$_stderrfile" -RedirectStandardOutput "$_stdoutfile"

@@ -10,7 +10,7 @@ locals {
   null_command_windows = "% ':'"
 
   // If command_unix is specified, use it. Otherwise, if command_windows is specified, use it. Otherwise, use a command that does nothing
-  command_unix = chomp(var.command_unix != null ? var.command_unix : (var.command_windows != null ? var.command_windows : local.null_command_unix))
+  command_unix = replace(replace(chomp(var.command_unix != null ? var.command_unix : (var.command_windows != null ? var.command_windows : local.null_command_unix)), "\r", ""), "\r\n", "\n")
   // If command_windows is specified, use it. Otherwise, if command_unixs is specified, use it. Otherwise, use a command that does nothing
   command_windows = chomp(var.command_windows != null ? var.command_windows : (var.command_unix != null ? var.command_unix : local.null_command_windows))
 
@@ -39,7 +39,7 @@ data "external" "run" {
   query = sensitive(local.is_windows ? {
     // If it's Windows, use the query parameter normally since PowerShell can natively handle JSON decoding
     directory       = base64encode(local.temporary_dir)
-    command         = base64encode("${local.command}\n${local.is_windows ? "Exit $LASTEXITCODE" : "exit $?"}")
+    command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
     exit_on_nonzero = base64encode(var.fail_on_nonzero_exit_code ? "true" : "false")
     exit_on_stderr  = base64encode(var.fail_on_stderr ? "true" : "false")
