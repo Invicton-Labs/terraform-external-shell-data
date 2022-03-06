@@ -1,5 +1,7 @@
 # Terraform Shell (Data)
 
+On the Terraform Registry: [Invicton-Labs/shell-data/external](https://registry.terraform.io/modules/Invicton-Labs/shell-data/external/latest)
+
 This module provides a wrapper for running shell scripts as data sources (re-run on every plan/apply) and capturing the output. Unlike Terraform's standard [External Data Source](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/data_source), this module supports:
 - Environment variables
 - Capturing `stdout`, `stderr`, and `exit_code` of the command
