@@ -6,13 +6,14 @@ This module provides a wrapper for running shell scripts as data sources (re-run
 - Built-in support for both Unix and Windows
 - Optional Terraform failure when an error in the given command occurs
 
-For Windows, this module should work on any system that supports a relatively modern version of PowerShell.
-
-For Unix, this module should work on any system that supports `sed` and `base64` (which is the vast majority of out-of-the-box systems).
+For Windows, this module should work on any system that supports a relatively modern version of PowerShell. For Unix, this module should work on any system that supports `sed` and `base64` (which is the vast majority of out-of-the-box systems).
 
 For a similar module that **runs as a resource** (only re-runs the command on resource re-create or on a change in a trigger), see [this module](https://registry.terraform.io/modules/Invicton-Labs/shell-resource/external/latest) on the Terraform Registry.
 
-# Usage
+## Usage
+
+**Note:** if only one of `command_unix` or `command_windows` is provided, that one will be used on all operating systems. The same applies for `command_when_destroy_unix` and `command_when_destroy_windows`.
+
 ```
 module "shell_data_hello" {
   source  = "Invicton-Labs/shell-data/external"
