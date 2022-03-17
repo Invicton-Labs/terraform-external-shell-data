@@ -48,3 +48,9 @@ variable "force_wait_for_apply" {
   type        = bool
   default     = false
 }
+
+variable "timeout" {
+  type        = number
+  default     = null
+  description = "The maximum number of seconds to allow the shell command to execute for  If it exceeds this timeout, it will be killed and will fail. Leave as the default (`null`) for no timeout."
+}

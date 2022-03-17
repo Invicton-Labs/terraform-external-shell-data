@@ -43,6 +43,7 @@ data "external" "run" {
     environment     = base64encode(local.env_file_content)
     exit_on_nonzero = base64encode(var.fail_on_nonzero_exit_code ? "true" : "false")
     exit_on_stderr  = base64encode(var.fail_on_stderr ? "true" : "false")
+    
     } : {
     // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in bash, 
     // without needing to install jq
