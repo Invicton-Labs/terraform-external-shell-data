@@ -1,4 +1,4 @@
-set -eu
+set -euo pipefail
 
 # We know that all of the inputs are base64-encoded, and "|" is not a valid base64 character, so therefore it
 # cannot possibly be included in the stdin.
