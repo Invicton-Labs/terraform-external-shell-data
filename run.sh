@@ -1,4 +1,8 @@
-set -euo pipefail
+# Try to set this, which we want if using bash
+# Other shells might not support it though, so suppress the error
+set -o pipefail 2> /dev/null
+
+set -eu
 
 # We know that all of the inputs are base64-encoded, and "|" is not a valid base64 character, so therefore it
 # cannot possibly be included in the stdin.

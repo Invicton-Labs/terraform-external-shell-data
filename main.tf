@@ -33,7 +33,7 @@ locals {
 
 // Run the command
 data "external" "run" {
-  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : ["bash", "${abspath(path.module)}/run.sh"]
+  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : ["/bin/sh", "${abspath(path.module)}/run.sh"]
   // Mark the query as sensitive just so it doesn't show up in the plan output.
   // Since it's all base64-encoded anyways, showing it in the plan wouldn't be useful
   query = sensitive(local.is_windows ? {
@@ -43,9 +43,9 @@ data "external" "run" {
     environment     = base64encode(local.env_file_content)
     exit_on_nonzero = base64encode(var.fail_on_nonzero_exit_code ? "true" : "false")
     exit_on_stderr  = base64encode(var.fail_on_stderr ? "true" : "false")
-    
+
     } : {
-    // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in bash, 
+    // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
     // without needing to install jq
     "" = join("", [local.unix_query_separator, join(local.unix_query_separator, [
       base64encode(local.temporary_dir),
