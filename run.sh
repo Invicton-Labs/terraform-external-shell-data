@@ -1,5 +1,6 @@
 # Try to set this, which we want if using bash
 # Other shells might not support it though, so suppress the error
+set +e
 set -o pipefail 2> /dev/null
 
 set -eu

@@ -3,16 +3,16 @@ locals {
 
   // If `force_wait_for_apply` is set to `true`, this will not return a value
   // until the apply step, thereby forcing the external data to wait for the apply step
-  wait_for_apply = var.force_wait_for_apply ? uuid() : null
+  wait_for_apply = local.var_force_wait_for_apply ? uuid() : null
 
   # These are commands that have no effect
   null_command_unix    = ":"
   null_command_windows = "% ':'"
 
   // If command_unix is specified, use it. Otherwise, if command_windows is specified, use it. Otherwise, use a command that does nothing
-  command_unix = replace(replace(chomp(var.command_unix != null ? var.command_unix : (var.command_windows != null ? var.command_windows : local.null_command_unix)), "\r", ""), "\r\n", "\n")
+  command_unix = replace(replace(chomp(local.var_command_unix != null ? local.var_command_unix : (local.var_command_windows != null ? local.var_command_windows : local.null_command_unix)), "\r", ""), "\r\n", "\n")
   // If command_windows is specified, use it. Otherwise, if command_unix is specified, use it. Otherwise, use a command that does nothing
-  command_windows = chomp(var.command_windows != null ? var.command_windows : (var.command_unix != null ? var.command_unix : local.null_command_windows))
+  command_windows = chomp(local.var_command_windows != null ? local.var_command_windows : (local.var_command_unix != null ? local.var_command_unix : local.null_command_windows))
 
   // Select the command based on the operating system
   command = local.is_windows ? local.command_windows : local.command_unix
@@ -26,14 +26,14 @@ locals {
 
   // Generate the environment variable file
   env_file_content = join(";", [
-    for k, v in var.environment :
+    for k, v in local.var_environment :
     "${k}:${base64encode(v)}"
   ])
 }
 
 // Run the command
 data "external" "run" {
-  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : ["/bin/sh", "${abspath(path.module)}/run.sh"]
+  program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : [local.var_unix_interpreter, "${abspath(path.module)}/run.sh"]
   // Mark the query as sensitive just so it doesn't show up in the plan output.
   // Since it's all base64-encoded anyways, showing it in the plan wouldn't be useful
   query = sensitive(local.is_windows ? {
@@ -41,9 +41,8 @@ data "external" "run" {
     directory       = base64encode(local.temporary_dir)
     command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
-    exit_on_nonzero = base64encode(var.fail_on_nonzero_exit_code ? "true" : "false")
-    exit_on_stderr  = base64encode(var.fail_on_stderr ? "true" : "false")
-
+    exit_on_nonzero = base64encode(local.var_fail_on_nonzero_exit_code ? "true" : "false")
+    exit_on_stderr  = base64encode(local.var_fail_on_stderr ? "true" : "false")
     } : {
     // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
     // without needing to install jq
@@ -51,11 +50,11 @@ data "external" "run" {
       base64encode(local.temporary_dir),
       base64encode("${local.command}\n${local.is_windows ? "Exit $LASTEXITCODE" : "exit $?"}"),
       base64encode(local.env_file_content),
-      base64encode(var.fail_on_nonzero_exit_code ? "true" : "false"),
-      base64encode(var.fail_on_stderr ? "true" : "false")
+      base64encode(local.var_fail_on_nonzero_exit_code ? "true" : "false"),
+      base64encode(local.var_fail_on_stderr ? "true" : "false")
     ]), local.unix_query_separator])
   })
-  working_dir = local.wait_for_apply == null ? var.working_dir : var.working_dir
+  working_dir = local.wait_for_apply == null ? local.var_working_dir : local.var_working_dir
 }
 
 locals {
