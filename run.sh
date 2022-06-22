@@ -7,25 +7,21 @@ set -u
 
 # This checks if we're running on MacOS
 kernel_name="$(uname -s)"
+is_mac="false"
 case "${kernel_name}" in
-    darwin*)    
-        # It's MacOS.
-        # Mac doesn't support the "-d" flag for base64 decoding, 
-        # so we have to use the full "--decode" flag instead.
-        decode_flag="--decode"
-        # Mac doesn't support the "-w" flag for base64 wrapping, 
-        # and it isn't needed because by default it doens't break lines.
-        wrap_flag="" ;;
-    *)          
-        # It's NOT MacOS.
-        # Not all Linux base64 installs (e.g. BusyBox) support the full
-        # "--decode" flag. So, we use "-d" here, since it's supported
-        # by everything except MacOS.
-        decode_flag="-d"
-        # All non-Mac installs need this to be specified to prevent line
-        # wrapping, which adds newlines that we don't want.
-        wrap_flag="-w0" ;;
+    darwin*) is_mac="true" ;;
 esac
+
+if [ "$is_mac" = "true" ]; then
+    # Mac doesn't support the "-d" flag for base64 decoding, 
+    # so we have to use the full "--decode" flag instead.
+    decode_flag="--decode"
+else
+    # Not all Linux base64 installs (e.g. BusyBox) support the full
+    # "--decode" flag. So, we use "-d" here, since it's supported
+    # by everything except MacOS.
+    decode_flag="-d"
+fi
 
 _raw_input="$(cat)"
 
@@ -108,8 +104,13 @@ if ( [ "$_exit_on_nonzero" = "true" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_o
 fi
 
 # Base64-encode the stdout and stderr for transmission back to Terraform
-_stdout_b64=$(echo -n "$_stdout" | base64)
-_stderr_b64=$(echo -n "$_stderr" | base64)
+if [ "$is_mac" = "true" ]; then
+    _stdout_b64=$(echo -n "$_stdout" | base64)
+    _stderr_b64=$(echo -n "$_stderr" | base64)
+else
+    _stdout_b64=$(echo -n "$_stdout" | base64 -w0)
+    _stderr_b64=$(echo -n "$_stderr" | base64 -w0)
+fi
 
 # Echo a JSON string that Terraform can parse as the result
-echo -n "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}"
+echo "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}"
