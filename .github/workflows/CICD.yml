@@ -9,13 +9,10 @@ jobs:
       matrix:
         image: [
           "alpine:latest", 
-          "redhat/ubi8:latest", 
-          "redhat/ubi9:latest", 
+          "redhat/ubi9:latest",
           "fedora:latest", 
+          "centos:latest",
           "ubuntu:latest"
-          # "ubuntu:22.04",
-          # "ubuntu:20.04",
-          # "ubuntu:18.04",
         ]
         tf_version: [
           "1.2.0",
@@ -63,7 +60,7 @@ jobs:
         if: startsWith(matrix.image, 'ubuntu:')
         run: |
           apt-get update
-          apt-get install -y curl gnupg lsb-release
+          apt-get install -y curl gnupg lsb-release apt-add-repository
           curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
           apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           apt-get update
