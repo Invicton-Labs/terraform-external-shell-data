@@ -1,10 +1,11 @@
 {
-    "command_unix": "echo \"$INPUT\"",
-    "command_windows": "Write-Output \"$Env:INPUT\"",
-    "expected_stdout": "hello world",
+    "command_unix": "echo \"$INPUT-$lowerINPUT1324\"",
+    "command_windows": "Write-Output \"$Env:INPUT$Env:lowerINPUT1324\"",
     "environment": {
-        "INPUT": "hello world"
+        "INPUT": "hello world",
+        "lowerINPUT1234": "goodbye world"
     },
+    "expected_stdout": "hello world-goodbye world",
     "expected_stderr": "",
     "expected_exit_code": 0
 }

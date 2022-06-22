@@ -15,8 +15,7 @@ case "${kernel_name}" in
         decode_flag="--decode"
         # Mac doesn't support the "-w" flag for base64 wrapping, 
         # and it isn't needed because by default it doens't break lines.
-        wrap_flag=""
-        ;;
+        wrap_flag="" ;;
     *)          
         # It's NOT MacOS.
         # Not all Linux base64 installs (e.g. BusyBox) support the full
@@ -25,8 +24,7 @@ case "${kernel_name}" in
         decode_flag="-d"
         # All non-Mac installs need this to be specified to prevent line
         # wrapping, which adds newlines that we don't want.
-        wrap_flag="-w0"
-        ;;
+        wrap_flag="-w0" ;;
 esac
 
 _raw_input="$(cat)"

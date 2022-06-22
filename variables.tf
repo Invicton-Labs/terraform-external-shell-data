@@ -25,9 +25,9 @@ variable "environment" {
     condition = var.environment == null ? true : length([
       for k in keys(var.environment) :
       true
-      if length(regexall("^[A-Z_]+[A-Z0-9_]*$", k)) == 0
+      if length(regexall("^[a-zA-Z_]+[a-zA-Z0-9_]*$", k)) == 0
     ]) == 0
-    error_message = "Environment variable names must consist solely of uppercase letters, digits, and underscores, and may not start with a digit."
+    error_message = "Environment variable names must consist solely of letters, digits, and underscores, and may not start with a digit."
   }
 }
 locals {
