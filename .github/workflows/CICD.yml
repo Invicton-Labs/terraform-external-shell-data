@@ -12,39 +12,46 @@ jobs:
         shell: ["/bin/sh"]
         tf_version: ["1.2.0"]
         include:
-          # Extra tags per image
-          - image_name: "ubuntu"
-            image_tag: "18.04"
-            shell: "/bin/bash"
-          - image_name: "ubuntu"
-            image_tag: "18.04"
-            shell: "/bin/dash"
-
-          - image_name: "ubuntu"
-            image_tag: "20.04"
-            shell: "/bin/bash"
-          - image_name: "ubuntu"
-            image_tag: "20.04"
-            shell: "/bin/dash"
+          # # Extra tags per image
+          # - image_name: "ubuntu"
+          #   image_tag: "latest"
+          #   shell: "/bin/bash"
+          # - image_name: "ubuntu"
+          #   image_tag: "latest"
+          #   shell: "/bin/dash"
             
-          - image_name: "ubuntu"
-            image_tag: "22.04"
-            shell: "/bin/bash"
-          - image_name: "ubuntu"
-            image_tag: "22.04"
-            shell: "/bin/dash"
+          # - image_name: "ubuntu"
+          #   image_tag: "18.04"
+          #   shell: "/bin/bash"
+          # - image_name: "ubuntu"
+          #   image_tag: "18.04"
+          #   shell: "/bin/dash"
 
-          # Installation commands per image
+          # - image_name: "ubuntu"
+          #   image_tag: "20.04"
+          #   shell: "/bin/bash"
+          # - image_name: "ubuntu"
+          #   image_tag: "20.04"
+          #   shell: "/bin/dash"
+            
+          # - image_name: "ubuntu"
+          #   image_tag: "22.04"
+          #   shell: "/bin/bash"
+          # - image_name: "ubuntu"
+          #   image_tag: "22.04"
+          #   shell: "/bin/dash"
+
+          # Installation commands per image name
           - image_name: "alpine"
-            tf_install: wget https://releases.hashicorp.com/terraform/{TF_VERSION}/terraform_{TF_VERSION}_linux_amd64.zip && unzip terraform_{TF_VERSION}_linux_amd64.zip && sudo mv terraform /usr/bin/terraform
+            tf_install: wget https://releases.hashicorp.com/terraform/{TF_VERSION}/terraform_{TF_VERSION}_linux_amd64.zip && unzip terraform_{TF_VERSION}_linux_amd64.zip && mv terraform /usr/bin/terraform
           - image_name: "redhat/ubi8-minimal"
-            tf_install: sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && sudo yum -y install terraform={TF_VERSION}
+            tf_install: yum install -y yum-utils && yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && yum -y install terraform={TF_VERSION}
           - image_name: "redhat/ubi9-minimal"
-            tf_install: sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && sudo yum -y install terraform={TF_VERSION}
+            tf_install: yum install -y yum-utils && yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && yum -y install terraform={TF_VERSION}
           - image_name: "fedora"
-            tf_install: sudo dnf install -y dnf-plugins-core && sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && sudo dnf -y install terraform={TF_VERSION}
+            tf_install: dnf install -y dnf-plugins-core && dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && dnf -y install terraform={TF_VERSION}
           - image_name: "ubuntu"
-            tf_install: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - && sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && sudo apt-get update && sudo apt-get install terraform={TF_VERSION}
+            tf_install: curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - && apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && apt-get update && apt-get install terraform={TF_VERSION}
 
     runs-on: ubuntu-latest
     container:
