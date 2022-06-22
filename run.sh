@@ -7,23 +7,25 @@ set -u
 
 # This checks if we're running on MacOS
 kernel_name="$(uname -s)"
-is_mac="false"
 case "${kernel_name}" in
-    darwin*|Darwin*) is_mac="true" ;;
+    darwin*|Darwin*)    
+        # It's MacOS.
+        # Mac doesn't support the "-d" flag for base64 decoding, 
+        # so we have to use the full "--decode" flag instead.
+        decode_flag="--decode"
+        # Mac doesn't support the "-w" flag for base64 wrapping, 
+        # and it isn't needed because by default it doens't break lines.
+        wrap_flag="" ;;
+    *)
+        # It's NOT MacOS.
+        # Not all Linux base64 installs (e.g. BusyBox) support the full
+        # "--decode" flag. So, we use "-d" here, since it's supported
+        # by everything except MacOS.
+        decode_flag="-d"
+        # All non-Mac installs need this to be specified to prevent line
+        # wrapping, which adds newlines that we don't want.
+        wrap_flag="-w0" ;;
 esac
-
-if [ "$is_mac" = "true" ]; then
-    # Mac doesn't support the "-d" flag for base64 decoding, 
-    # so we have to use the full "--decode" flag instead.
-    decode_flag="--decode"
-    echo "{\"stdout\": \"is mac\", \"stderr\": \"is mac\", \"exitcode\": \"0\"}"
-    exit 0
-else
-    # Not all Linux base64 installs (e.g. BusyBox) support the full
-    # "--decode" flag. So, we use "-d" here, since it's supported
-    # by everything except MacOS.
-    decode_flag="-d"
-fi
 
 _raw_input="$(cat)"
 
@@ -41,9 +43,19 @@ _exit_on_stderr=$(echo "$7" | base64 $decode_flag)
 _debug=$(echo "$8" | base64 $decode_flag)
 _shell=$(echo "$9" | base64 $decode_flag)
 
-# Generate a random/unique ID
+# Generate a random/unique ID if an ID wasn't explicitly set
 if [ "$_execution_id" = " " ]; then
-    _execution_id="$RANDOM-$RANDOM-$RANDOM-$RANDOM"
+    # We try many different strategies for generating a random number, hoping that at least one will succeed,
+    # since each OS/shell supports a different combination.
+    if [ -e /proc/sys/kernel/random/uuid ]; then
+        _execution_id="$(cat /proc/sys/kernel/random/uuid)"
+    elif [ -e /dev/urandom ]; then
+        _execution_id="$(cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-40} | head -n 1)"
+    elif [ -e /dev/random ]; then
+        _execution_id="$(cat /dev/random | tr -dc '[:alpha:]' | fold -w ${1:-40} | head -n 1)"
+    else
+        _execution_id="$RANDOM-$RANDOM-$RANDOM-$RANDOM"
+    fi
 fi
 _cmdfile="$_directory/$_execution_id.sh"
 _stderrfile="$_directory/$_execution_id.stderr"
@@ -106,13 +118,8 @@ if ( [ "$_exit_on_nonzero" = "true" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_o
 fi
 
 # Base64-encode the stdout and stderr for transmission back to Terraform
-if [ "$is_mac" = "true" ]; then
-    _stdout_b64=$(echo -n "$_stdout" | base64)
-    _stderr_b64=$(echo -n "$_stderr" | base64)
-else
-    _stdout_b64=$(echo -n "$_stdout" | base64 -w0)
-    _stderr_b64=$(echo -n "$_stderr" | base64 -w0)
-fi
+_stdout_b64=$(echo -n "$_stdout" | base64 $wrap_flag)
+_stderr_b64=$(echo -n "$_stderr" | base64 $wrap_flag)
 
 # Echo a JSON string that Terraform can parse as the result
 echo "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}"
