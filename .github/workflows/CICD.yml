@@ -70,14 +70,13 @@ jobs:
       - name: Install Terraform (Redhat)
         if: startsWith(matrix.image_name, 'redhat/')
         run: |
-          yum install -y yum-utils
+          yum install -y yum-utils git
           yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
           yum -y install terraform-${{ matrix.tf_version }}
 
       - name: Install Terraform (Fedora)
         if: matrix.image_name == 'fedora'
         run: |
-          dnf -y update
           dnf install -y dnf-plugins-core git
           dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
           dnf -y install terraform-${{ matrix.tf_version }}
@@ -86,7 +85,7 @@ jobs:
         if: matrix.image_name == 'ubuntu'
         run: |
           apt-get update
-          apt-get install -y curl
+          apt-get install -y curl gnupg
           curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
           apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           apt-get update
