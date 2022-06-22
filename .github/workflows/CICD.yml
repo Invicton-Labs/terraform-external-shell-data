@@ -8,19 +8,11 @@ jobs:
       fail-fast: false
       matrix:
         image_name: ["alpine", "redhat/ubi8-minimal", "redhat/ubi9-minimal", "fedora", "ubuntu"]
-        image_tag: []
-        shell: []
+        image_tag: ["latest"]
+        shell: ["/bin/sh"]
         tf_version: ["1.2.0"]
         include:
-          # Tags per image
-          - image_name: "alpine"
-            image_tag: "latest"
-          - image_name: "redhat/ubi8-minimal"
-            image_tag: "latest"
-          - image_name: "redhat/ubi9-minimal"
-            image_tag: "latest"
-          - image_name: "fedora"
-            image_tag: "latest"
+          # Extra tags per image
           - image_name: "ubuntu"
             image_tag: "18.04"
           - image_name: "ubuntu"
@@ -28,15 +20,7 @@ jobs:
           - image_name: "ubuntu"
             image_tag: "22.04"
 
-          # Shells per image
-          - image_name: "alpine"
-            shell: "/bin/sh"
-          - image_name: "redhat/ubi8-minimal"
-            shell: "/bin/sh"
-          - image_name: "redhat/ubi9-minimal"
-            shell: "/bin/sh"
-          - image_name: "fedora"
-            shell: "/bin/sh"
+          # Extra shells per image
           - image_name: "ubuntu"
             shell: "/bin/bash"
           - image_name: "ubuntu"
