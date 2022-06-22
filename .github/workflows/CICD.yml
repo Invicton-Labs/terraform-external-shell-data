@@ -111,7 +111,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Terraform
-        buses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ matrix.tf_version }}
 
