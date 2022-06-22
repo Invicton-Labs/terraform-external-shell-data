@@ -62,6 +62,7 @@ jobs:
       - name: Install Terraform (Alpine)
         if: matrix.image_name == 'alpine'
         run: |
+          apk add --no-cache git
           wget https://releases.hashicorp.com/terraform/${{ matrix.tf_version }}/terraform_${{ matrix.tf_version }}_linux_amd64.zip
           unzip terraform_${{ matrix.tf_version }}_linux_amd64.zip
           mv terraform /usr/bin/terraform
@@ -71,18 +72,20 @@ jobs:
         run: |
           yum install -y yum-utils
           yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-          yum -y install terraform=${{ matrix.tf_version }}
+          yum -y install terraform-${{ matrix.tf_version }}
 
       - name: Install Terraform (Fedora)
         if: matrix.image_name == 'fedora'
         run: |
-          dnf install -y dnf-plugins-core
+          dnf -y update
+          dnf install -y dnf-plugins-core git
           dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
           dnf -y install terraform-${{ matrix.tf_version }}
 
       - name: Install Terraform (Ubuntu)
         if: matrix.image_name == 'ubuntu'
         run: |
+          apt-get update
           apt-get install -y curl
           curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
           apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
