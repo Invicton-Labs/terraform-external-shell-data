@@ -50,9 +50,9 @@ if [ "$_execution_id" = " " ]; then
     if [ -e /proc/sys/kernel/random/uuid ]; then
         _execution_id="$(cat /proc/sys/kernel/random/uuid)"
     elif [ -e /dev/urandom ]; then
-        _execution_id="$(cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-40} | head -n 1)"
+        _execution_id="$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]' | fold -w ${1:-40} | head -n 1)"
     elif [ -e /dev/random ]; then
-        _execution_id="$(cat /dev/random | tr -dc '[:alpha:]' | fold -w ${1:-40} | head -n 1)"
+        _execution_id="$(cat /dev/random | LC_ALL=C tr -dc '[:alpha:]' | fold -w ${1:-40} | head -n 1)"
     else
         _execution_id="$RANDOM-$RANDOM-$RANDOM-$RANDOM"
     fi
