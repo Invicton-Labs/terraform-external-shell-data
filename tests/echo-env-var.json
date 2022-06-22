@@ -1,6 +1,6 @@
 {
-    "command_unix": "echo \"$INPUT-$lowerINPUT1324\"",
-    "command_windows": "Write-Output \"$Env:INPUT$Env:lowerINPUT1324\"",
+    "command_unix": "echo \"${INPUT}-${lowerINPUT1234}\"",
+    "command_windows": "Write-Output \"$Env:INPUT-$Env:lowerINPUT1234\"",
     "environment": {
         "INPUT": "hello world",
         "lowerINPUT1234": "goodbye world"
