@@ -94,7 +94,7 @@ jobs:
         working-directory: /workspace/tester
         run: terraform plan
 
-  Windows/MacOS:
+  Windows-MacOS:
     strategy:
       fail-fast: false
       matrix:
