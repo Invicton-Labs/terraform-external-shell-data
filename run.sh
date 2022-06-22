@@ -16,6 +16,8 @@ if [ "$is_mac" = "true" ]; then
     # Mac doesn't support the "-d" flag for base64 decoding, 
     # so we have to use the full "--decode" flag instead.
     decode_flag="--decode"
+    echo "{\"stdout\": \"is mac\", \"stderr\": \"is mac\", \"exitcode\": \"0\"}"
+    exit 0
 else
     # Not all Linux base64 installs (e.g. BusyBox) support the full
     # "--decode" flag. So, we use "-d" here, since it's supported
