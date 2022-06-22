@@ -47,7 +47,7 @@ jobs:
     steps:
       - name: Install Terraform
         run: |
-          _cmd=$(echo "${{ matrix.tf_install }}" | sed 's/{TF_VERSION}/${{ matrix.tf_version }}/')
+          _cmd=$(echo '${{ matrix.tf_install }}' | sed 's/{TF_VERSION}/${{ matrix.tf_version }}/')
           echo "$_cmd"
           eval "$_cmd"
 
