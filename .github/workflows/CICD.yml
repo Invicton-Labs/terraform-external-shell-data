@@ -42,9 +42,19 @@ jobs:
           unzip terraform_${{ matrix.tf_version }}_linux_amd64.zip
           mv terraform /usr/bin/terraform
           
-      - name: Install Terraform (Redhat/CentOS)
-        if: startsWith(matrix.image, 'redhat/') || startsWith(matrix.image, 'centos:')
+      - name: Install Terraform (Redhat)
+        if: startsWith(matrix.image, 'redhat/')
         run: |
+          yum -y update
+          yum install -y yum-utils git
+          yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+          yum -y install terraform-${{ matrix.tf_version }}
+
+      - name: Install Terraform (CentOS)
+        if: startsWith(matrix.image, 'centos:')
+        run: |
+          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
           yum -y update
           yum install -y yum-utils git
           yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
