@@ -5,8 +5,11 @@ on: [push, pull_request]
 jobs:
   Linux:
     strategy:
+      fail-fast: false
       matrix:
         image_name: ["alpine", "redhat/ubi8-minimal", "redhat/ubi9-minimal", "fedora", "ubuntu"]
+        image_tag: []
+        shell: []
         tf_version: ["1.2.0"]
         include:
           # Tags per image
@@ -61,6 +64,8 @@ jobs:
       - name: Install Terraform
         run: |
           _cmd=$(echo "${{ matrix.tf_install }}" | sed 's/{TF_VERSION}/${{ matrix.tf_version }}/')
+          echo "$_cmd"
+          eval "$_cmd"
 
       - name: Terraform Init
         working-directory: /workspace
