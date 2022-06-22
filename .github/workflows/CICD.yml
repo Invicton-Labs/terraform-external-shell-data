@@ -40,11 +40,6 @@ jobs:
             image: "ubuntu:22.04"
             shell: "/bin/dash"
 
-          # Run on Arch Linux
-          - os: ubuntu-latest
-            image: "archlinux:latest"
-            shell: "/bin/sh"
-
     runs-on: ${{ matrix.os }}
     container:
       image: ${{ matrix.image }}
