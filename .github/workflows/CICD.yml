@@ -33,9 +33,6 @@ jobs:
         - ${{ github.workspace }}:/workspace
     
     steps:
-      # Checkout the repository
-      - name: Checkout
-        uses: actions/checkout@v3
 
       - name: Install Terraform (Alpine)
         if: startsWith(matrix.image, 'alpine:')
@@ -48,6 +45,7 @@ jobs:
       - name: Install Terraform (Redhat/CentOS)
         if: startsWith(matrix.image, 'redhat/') || startsWith(matrix.image, 'centos:')
         run: |
+          yum -y update
           yum install -y yum-utils git
           yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
           yum -y install terraform-${{ matrix.tf_version }}
@@ -81,6 +79,45 @@ jobs:
           apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           apt-get update
           apt-get install -y terraform=${{ matrix.tf_version }}
+
+      # Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Initialize the workspace
+      - name: Terraform Init
+        working-directory: /workspace/tester
+        run: terraform init
+
+      # We only need to run a plan, since there are no resources used in testing
+      - name: Terraform Plan
+        working-directory: /workspace/tester
+        run: terraform plan
+
+  Windows/MacOS:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        tf_version: [
+          "1.2.0",
+          # "1.1.0",
+          # "1.0.0",
+          # "0.14.0",
+          # "0.13.0",
+          # "0.12.0",
+        ]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Terraform
+        buses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ matrix.tf_version }}
+
+      # Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v3
 
       # Initialize the workspace
       - name: Terraform Init
