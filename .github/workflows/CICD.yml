@@ -8,9 +8,9 @@ jobs:
       fail-fast: false
       matrix:
         image_name: ["alpine", "redhat/ubi8", "redhat/ubi9", "fedora", "ubuntu"]
+        tf_version: ["1.2.0"]
         image_tag: ["latest"]
         shell: ["/bin/sh"]
-        tf_version: ["1.2.0"]
         include:
           # # Extra tags per image
           # - image_name: "ubuntu"
@@ -41,18 +41,6 @@ jobs:
           #   image_tag: "22.04"
           #   shell: "/bin/dash"
 
-          # Installation commands per image name
-          - image_name: "alpine"
-            tf_install: wget https://releases.hashicorp.com/terraform/{TF_VERSION}/terraform_{TF_VERSION}_linux_amd64.zip && unzip terraform_{TF_VERSION}_linux_amd64.zip && mv terraform /usr/bin/terraform
-          - image_name: "redhat/ubi8"
-            tf_install: yum install -y yum-utils && yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && yum -y install terraform={TF_VERSION}
-          - image_name: "redhat/ubi9"
-            tf_install: yum install -y yum-utils && yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && yum -y install terraform={TF_VERSION}
-          - image_name: "fedora"
-            tf_install: dnf install -y dnf-plugins-core && dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && dnf -y install terraform-{TF_VERSION}
-          - image_name: "ubuntu"
-            tf_install: apt-get install -y curl && curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - && apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && apt-get update && apt-get install -y terraform={TF_VERSION}
-
     runs-on: ubuntu-latest
     container:
       image: "${{ matrix.image_name }}:${{ matrix.image_tag }}"
@@ -71,12 +59,35 @@ jobs:
           echo "shell: ${{ matrix.shell }}"
           echo "tf_version: ${{ matrix.tf_version }}"
 
-      # Use the OS-specific installation script to install Terraform
-      - name: Install Terraform
+      - name: Install Terraform (Alpine)
+        if: matrix.image_name == 'alpine'
         run: |
-          _cmd=$(echo '${{ matrix.tf_install }}' | sed 's/{TF_VERSION}/${{ matrix.tf_version }}/g')
-          echo "$_cmd"
-          eval "$_cmd"
+          wget https://releases.hashicorp.com/terraform/${{ matrix.tf_version }}/terraform_${{ matrix.tf_version }}_linux_amd64.zip
+          unzip terraform_${{ matrix.tf_version }}_linux_amd64.zip
+          mv terraform /usr/bin/terraform
+          
+      - name: Install Terraform (Redhat)
+        if: startsWith(matrix.image_name, 'redhat/')
+        run: |
+          yum install -y yum-utils
+          yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+          yum -y install terraform=${{ matrix.tf_version }}
+
+      - name: Install Terraform (Fedora)
+        if: matrix.image_name == 'fedora'
+        run: |
+          dnf install -y dnf-plugins-core
+          dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+          dnf -y install terraform-${{ matrix.tf_version }}
+
+      - name: Install Terraform (Ubuntu)
+        if: matrix.image_name == 'ubuntu'
+        run: |
+          apt-get install -y curl
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
+          apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          apt-get update
+          apt-get install -y terraform=${{ matrix.tf_version }}
 
       # Initialize the workspace
       - name: Terraform Init
