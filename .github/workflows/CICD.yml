@@ -6,51 +6,61 @@ jobs:
   Linux:
     strategy:
       matrix:
-        os: [ubuntu-latest] #, windows-latest, macos-latest]
+        image_name: ["alpine", "redhat/ubi8-minimal", "redhat/ubi9-minimal", "fedora", "ubuntu"]
+        tf_version: ["1.2.0"]
         include:
-          # Run on an Alpine container (uses BusyBox)
-          - os: ubuntu-latest
-            image: "alpine:latest"
+          # Tags per image
+          - image_name: "alpine"
+            image_tag: "latest"
+          - image_name: "redhat/ubi8-minimal"
+            image_tag: "latest"
+          - image_name: "redhat/ubi9-minimal"
+            image_tag: "latest"
+          - image_name: "fedora"
+            image_tag: "latest"
+          - image_name: "ubuntu"
+            image_tag: "18.04"
+          - image_name: "ubuntu"
+            image_tag: "20.04"
+          - image_name: "ubuntu"
+            image_tag: "22.04"
+
+          # Shells per image
+          - image_name: "alpine"
             shell: "/bin/sh"
-
-          # Run on Ubuntu 18.04 container with the Bash shell
-          - os: ubuntu-latest
-            image: "ubuntu:18.04"
+          - image_name: "redhat/ubi8-minimal"
+            shell: "/bin/sh"
+          - image_name: "redhat/ubi9-minimal"
+            shell: "/bin/sh"
+          - image_name: "fedora"
+            shell: "/bin/sh"
+          - image_name: "ubuntu"
             shell: "/bin/bash"
-          # Run on Ubuntu 18.04 container with the Dash shell
-          - os: ubuntu-latest
-            image: "ubuntu:18.04"
+          - image_name: "ubuntu"
             shell: "/bin/dash"
 
-          # Run on Ubuntu 20.04 container with the Bash shell
-          - os: ubuntu-latest
-            image: "ubuntu:20.04"
-            shell: "/bin/bash"
-          # Run on Ubuntu 20.04 container with the Dash shell
-          - os: ubuntu-latest
-            image: "ubuntu:20.04"
-            shell: "/bin/dash"
-
-          # Run on Ubuntu 22.04 container with the Bash shell
-          - os: ubuntu-latest
-            image: "ubuntu:22.04"
-            shell: "/bin/bash"
-          # Run on Ubuntu 22.04 container with the Dash shell
-          - os: ubuntu-latest
-            image: "ubuntu:22.04"
-            shell: "/bin/dash"
+          # Installation commands per image
+          - image_name: "alpine"
+            tf_install: wget https://releases.hashicorp.com/terraform/{TF_VERSION}/terraform_{TF_VERSION}_linux_amd64.zip && unzip terraform_{TF_VERSION}_linux_amd64.zip && sudo mv terraform /usr/bin/terraform
+          - image_name: "redhat/ubi8-minimal"
+            tf_install: sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && sudo yum -y install terraform={TF_VERSION}
+          - image_name: "redhat/ubi9-minimal"
+            tf_install: sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && sudo yum -y install terraform={TF_VERSION}
+          - image_name: "fedora"
+            tf_install: sudo dnf install -y dnf-plugins-core && sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && sudo dnf -y install terraform={TF_VERSION}
+          - image_name: "ubuntu"
+            tf_install: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - && sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && sudo apt-get update && sudo apt-get install terraform={TF_VERSION}
 
     runs-on: ${{ matrix.os }}
     container:
-      image: ${{ matrix.image }}
+      image: "${{ matrix.image_name }}:${{ matrix.image_tag }}"
       volumes:
         - ${{ github.workspace }}:/workspace
     
     steps:
       - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_wrapper: false
+        run: |
+          _cmd=$(echo "${{ matrix.tf_install }}" | sed 's/{TF_VERSION}/${{ matrix.tf_version }}/')
 
       - name: Terraform Init
         working-directory: /workspace
