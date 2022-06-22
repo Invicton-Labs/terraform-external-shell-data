@@ -12,7 +12,10 @@ jobs:
           "redhat/ubi9:latest",
           "fedora:latest", 
           "centos:latest",
-          "ubuntu:latest"
+          "ubuntu:latest",
+          "homebrew/brew:latest",
+          "amazonlinux:1",
+          "amazonlinux:2"
         ]
         tf_version: [
           "1.2.0",
@@ -43,10 +46,17 @@ jobs:
           mv terraform /usr/bin/terraform
           
       - name: Install Terraform (Redhat/CentOS)
-        if: startsWith(matrix.image, 'redhat/') || startsWith(matrix.image, 'centos/')
+        if: startsWith(matrix.image, 'redhat/') || startsWith(matrix.image, 'centos:')
         run: |
           yum install -y yum-utils git
           yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+          yum -y install terraform-${{ matrix.tf_version }}
+
+      - name: Install Terraform (Amazon Linux)
+        if: startsWith(matrix.image, 'amazonlinux:')
+        run: |
+          yum install -y yum-utils git
+          yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
           yum -y install terraform-${{ matrix.tf_version }}
 
       - name: Install Terraform (Fedora)
@@ -56,11 +66,17 @@ jobs:
           dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
           dnf -y install terraform-${{ matrix.tf_version }}
 
+      - name: Install Terraform (Homebrew)
+        if: startsWith(matrix.image, 'homebrew/latest:')
+        run: |
+          brew tap hashicorp/tap
+          brew install hashicorp/tap/terraform@${{ matrix.tf_version }}
+
       - name: Install Terraform (Ubuntu)
         if: startsWith(matrix.image, 'ubuntu:')
         run: |
           apt-get update
-          apt-get install -y curl gnupg lsb-release software-properties-common
+          apt-get install -y curl gnupg lsb-release software-properties-common git
           curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
           apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           apt-get update
