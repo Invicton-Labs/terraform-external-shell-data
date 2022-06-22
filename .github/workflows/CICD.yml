@@ -42,8 +42,8 @@ jobs:
           unzip terraform_${{ matrix.tf_version }}_linux_amd64.zip
           mv terraform /usr/bin/terraform
           
-      - name: Install Terraform (Redhat)
-        if: startsWith(matrix.image, 'redhat/')
+      - name: Install Terraform (Redhat/CentOS)
+        if: startsWith(matrix.image, 'redhat/') || startsWith(matrix.image, 'centos/')
         run: |
           yum install -y yum-utils git
           yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
@@ -60,7 +60,7 @@ jobs:
         if: startsWith(matrix.image, 'ubuntu:')
         run: |
           apt-get update
-          apt-get install -y curl gnupg lsb-release apt-add-repository
+          apt-get install -y curl gnupg lsb-release software-properties-common
           curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
           apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           apt-get update
