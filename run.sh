@@ -9,7 +9,7 @@ set -u
 kernel_name="$(uname -s)"
 is_mac="false"
 case "${kernel_name}" in
-    darwin*) is_mac="true" ;;
+    darwin*|Darwin*) is_mac="true" ;;
 esac
 
 if [ "$is_mac" = "true" ]; then
