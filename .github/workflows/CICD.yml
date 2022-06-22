@@ -51,7 +51,7 @@ jobs:
           - image_name: "ubuntu"
             tf_install: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - && sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && sudo apt-get update && sudo apt-get install terraform={TF_VERSION}
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     container:
       image: "${{ matrix.image_name }}:${{ matrix.image_tag }}"
       volumes:
