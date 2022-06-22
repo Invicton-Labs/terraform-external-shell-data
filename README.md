@@ -8,13 +8,17 @@ This module provides a wrapper for running shell scripts as data sources (re-run
 - Built-in support for both Unix and Windows
 - Optional Terraform failure when an error in the given command occurs
 
-For Windows, this module should work on any system that supports a relatively modern version of PowerShell. For Unix, this module should work on any system that supports `sed` and `base64` (which is the vast majority of out-of-the-box systems).
+For Windows, this module should work on any system that supports a relatively modern version of PowerShell. For Unix, this module should work on any POSIX-compatible shell that supports `echo`, `cat`, `cut`, and `base64` (which is the vast majority of out-of-the-box systems).
 
 For a similar module that **runs as a resource** (only re-runs the command on resource re-create or on a change in a trigger), see [this module](https://registry.terraform.io/modules/Invicton-Labs/shell-resource/external/latest) on the Terraform Registry.
 
-## Usage
+## Notes:
 
-**Note:** if only one of `command_unix` or `command_windows` is provided, that one will be used on all operating systems. The same applies for `command_when_destroy_unix` and `command_when_destroy_windows`.
+1. If only one of `command_unix` or `command_windows` is provided, that one will be used on all operating systems.
+2. Carriage returns (`\r`) are removed in all input commands. This is because Powershell doesn't require them to be present, but Unix shells don't support them, so removing them allows the same command to be used on both types of machine.
+3. Trailing newlines are trimmed for the `stdout` and `stderr` outputs. This is due to limitations with POSIX-compatible file reading and to ensure consistency between executions of the same Terraform configuration on Windows- and Unix-based machines.
+
+## Usage
 
 ```
 module "shell_data_hello" {

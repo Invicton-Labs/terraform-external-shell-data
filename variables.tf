@@ -22,7 +22,7 @@ variable "environment" {
   default     = {}
   validation {
     // Ensure that none of the variable names violate the env var naming rules
-    condition = length([
+    condition = var.environment == null ? true : length([
       for k in keys(var.environment) :
       true
       if length(regexall("^[A-Z_]+[A-Z0-9_]*$", k)) == 0
@@ -86,4 +86,18 @@ variable "unix_interpreter" {
 }
 locals {
   var_unix_interpreter = var.unix_interpreter != null ? var.unix_interpreter : "/bin/sh"
+}
+
+variable "execution_id" {
+  description = "A unique ID for the shell execution. Used for development only and will default to a UUID."
+  type        = string
+  default     = null
+  validation {
+    // Ensure that if an execution ID is provided, it matches the regex
+    condition     = var.execution_id == null ? true : length(regexall("^[a-zA-Z0-9_. -]+$", trimspace(var.execution_id))) > 0
+    error_message = "The `execution_id` must consist solely of letters, digits, hyphens, underscores, and spaces, and may not consist entirely of whitespace."
+  }
+}
+locals {
+  var_execution_id = var.execution_id
 }

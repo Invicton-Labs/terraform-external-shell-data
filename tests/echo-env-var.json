@@ -1,0 +1,10 @@
+{
+    "command_unix": "echo \"$INPUT\"",
+    "command_windows": "Write-Output \"$Env:INPUT\"",
+    "expected_stdout": "hello world",
+    "environment": {
+        "INPUT": "hello world"
+    },
+    "expected_stderr": "",
+    "expected_exit_code": 0
+}

@@ -34,3 +34,6 @@ override.tf.json
 # Ignore temporary output files
 /tmpfiles/*
 !/tmpfiles/.gitkeep
+
+# Ignore testing files
+/testing/.terraform

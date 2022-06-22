@@ -7,17 +7,21 @@ set-strictmode -version 3.0
 $jsonpayload = [Console]::In.ReadLine()
 $json = ConvertFrom-Json $jsonpayload
 
+$_execution_id = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.execution_id))
 $_directory = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.directory))
 $_command = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.command))
 $_environment = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.environment))
 $_exit_on_nonzero = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_nonzero))
 $_exit_on_stderr = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_stderr))
+$_debug = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.debug))
 
 # Generate a random/unique ID
-$_id = [guid]::NewGuid().ToString()
-$_cmdfile = "$_directory/$_id.ps1"
-$_stderrfile = "$_directory/$_id.stderr"
-$_stdoutfile = "$_directory/$_id.stdout"
+if ( "$_execution_id" -eq " " ) {
+    $_execution_id = [guid]::NewGuid().ToString()
+}
+$_cmdfile = "$_directory/$_execution_id.ps1"
+$_stderrfile = "$_directory/$_execution_id.stderr"
+$_stdoutfile = "$_directory/$_execution_id.stdout"
 
 # Set the environment variables
 $_env_vars = $_environment.Split(";")
@@ -30,10 +34,8 @@ foreach ($_env in $_env_vars) {
 }
 
 # Write the command to a file
-[System.IO.File]::WriteAllText("$_cmdfile", "$_command")
-
 # Always force the command file to exit with the last exit code
-[System.IO.File]::AppendAllText("$_cmdfile", "`n`nExit `$LASTEXITCODE")
+[System.IO.File]::WriteAllText("$_cmdfile", "$_command `n`nExit `$LASTEXITCODE")
 
 $ErrorActionPreference = "Continue"
 $_process = Start-Process powershell.exe -ArgumentList "-file ""$_cmdfile""" -Wait -PassThru -NoNewWindow -RedirectStandardError "$_stderrfile" -RedirectStandardOutput "$_stdoutfile"
@@ -44,10 +46,12 @@ $ErrorActionPreference = "Stop"
 $_stdout = [System.IO.File]::ReadAllBytes($_stdoutfile)
 $_stderr = [System.IO.File]::ReadAllBytes($_stderrfile)
 
-# Delete the files
-Remove-Item "$_cmdfile"
-Remove-Item "$_stderrfile"
-Remove-Item "$_stdoutfile"
+# Delete the files, unless we're using debug mode
+if ( "$_debug" -ne "true" ) {
+    Remove-Item "$_cmdfile"
+    Remove-Item "$_stderrfile"
+    Remove-Item "$_stdoutfile"
+}
 
 # If we want to kill Terraform on a non-zero exit code and the exit code was non-zero, OR
 # we want to kill Terraform on a non-empty stderr and the stderr was non-empty
@@ -69,6 +73,7 @@ if ((( "$_exit_on_nonzero" -eq "true" ) -and $_exitcode) -or (( "$_exit_on_stder
     exit 1
 }
 
+# Return the outputs as a JSON-encoded string for Terraform to parse
 @{
     stderr   = [System.Convert]::ToBase64String($_stderr)
     stdout   = [System.Convert]::ToBase64String($_stdout)

@@ -1,62 +1,83 @@
-# Try to set this, which we want if using bash
-# Other shells might not support it though, so suppress the error
-set +e
-set -o pipefail 2> /dev/null
+set -e
+if ! [ -z "$BASH" ]; then
+    # Only Bash supports this feature
+    set -o pipefail
+fi
+set -u
 
-set -eu
+# This checks if we're running on MacOS, which doesn't
+# support the use of "-d" for base64 decode.
+# We can't always use "--decode" because BusyBox's version
+# of base64 only supports "-d".
+kernel_name="$(uname -s)"
+case "${kernel_name}" in
+    darwin*)    decode_flag="--decode";;
+    *)          decode_flag="-d"
+esac
+
+_raw_input="$(cat)"
 
 # We know that all of the inputs are base64-encoded, and "|" is not a valid base64 character, so therefore it
 # cannot possibly be included in the stdin.
-IFS="|" read -a PARAMS <<< $(cat | sed -e 's/__59077cc7e1934758b19d469c410613a7_TF_MAGIC_SEGMENT_SEPARATOR/|/g')
-
-_directory=$(echo "${PARAMS[1]}" | base64 --decode)
-_command=$(echo "${PARAMS[2]}" | base64 --decode)
-_environment=$(echo "${PARAMS[3]}" | base64 --decode)
-_exit_on_nonzero=$(echo "${PARAMS[4]}" | base64 --decode)
-_exit_on_stderr=$(echo "${PARAMS[5]}" | base64 --decode)
+IFS="|"
+set -o noglob
+set -- $_raw_input""
+_execution_id=$(echo "$2" | base64 $decode_flag)
+_directory=$(echo "$3" | base64 $decode_flag)
+_command=$(echo "$4" | base64 $decode_flag)
+_environment=$(echo "$5" | base64 $decode_flag)
+_exit_on_nonzero=$(echo "$6" | base64 $decode_flag)
+_exit_on_stderr=$(echo "$7" | base64 $decode_flag)
+_debug=$(echo "$8" | base64 $decode_flag)
+_shell=$(echo "$9" | base64 $decode_flag)
 
 # Generate a random/unique ID
-_id="$RANDOM-$RANDOM-$RANDOM-$RANDOM"
-_cmdfile="$_directory/$_id.sh"
-_stderrfile="$_directory/$_id.stderr"
-_stdoutfile="$_directory/$_id.stdout"
+if [ "$_execution_id" = " " ]; then
+    _execution_id="$RANDOM-$RANDOM-$RANDOM-$RANDOM"
+fi
+_cmdfile="$_directory/$_execution_id.sh"
+_stderrfile="$_directory/$_execution_id.stderr"
+_stdoutfile="$_directory/$_execution_id.stdout"
 
 # Split the env var input on semicolons. We use semicolons because we know
 # that neither the env var name nor the base64-encoded value will contain
 # a semicolon.
-IFS=';' read -ra ENVRNMT <<< "$_environment"
-for _env in "${ENVRNMT[@]}"; do
+IFS=";"
+set -o noglob
+set -- $_environment""
+for _env in "$@"; do
     if [ -z "$_env" ]; then
         continue
     fi
     # For each env var, split it on a colon. We use colons because we know
     # that neither the env var name nor the base64-encoded value will contain
     # a colon.
-	IFS=':' read -ra ENVRNMT_PARTS <<< "$_env"
-    _key="${ENVRNMT_PARTS[0]}"
-    _val=$(echo "${ENVRNMT_PARTS[1]}" | base64 --decode)
+    _key="$(echo "$_env" | cut -d':' -f1)"
+    _val="$(echo "$_env" | cut -d':' -f2 | base64 $decode_flag)"
+    echo "$_key: $_val" > "$_directory/$_execution_id.env-$_key"
     export "$_key"="$_val"
 done
 
 # Write the command to a file
-echo -e "$_command" > "$_cmdfile"
-
 # Always force the command file to exit with the last exit code
-echo 'exit $?' >> "$_cmdfile"
+printf "$_command\n\nexit $?" > "$_cmdfile"
 
+# Run the command, but don't exit this script on an error
 set +e
-    2>"$_stderrfile" >"$_stdoutfile" bash "$_cmdfile"
+    2>"$_stderrfile" >"$_stdoutfile" $_shell "$_cmdfile"
     _exitcode=$?
 set -e
 
 # Read the stderr and stdout files
-_stdout=$(cat "$_stdoutfile")
-_stderr=$(cat "$_stderrfile")
+_stdout="$(cat "$_stdoutfile")"
+_stderr="$(cat "$_stderrfile")"
 
-# Delete the files
-rm "$_cmdfile"
-rm "$_stderrfile"
-rm "$_stdoutfile"
+# Delete the files, unless we're using debug mode
+if [ "$_debug" != "true" ]; then
+    rm "$_cmdfile"
+    rm "$_stderrfile"
+    rm "$_stdoutfile"
+fi
 
 # If we want to kill Terraform on a non-zero exit code and the exit code was non-zero, OR
 # we want to kill Terraform on a non-empty stderr and the stderr was non-empty
@@ -75,8 +96,8 @@ if ( [ "$_exit_on_nonzero" = "true" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_o
 fi
 
 # Base64-encode the stdout and stderr for transmission back to Terraform
-_stdout_b64=$(echo -n "$_stdout" | base64 --wrap 0)
-_stderr_b64=$(echo -n "$_stderr" | base64 --wrap 0)
+_stdout_b64=$(echo -n "$_stdout" | base64 -w 0)
+_stderr_b64=$(echo -n "$_stderr" | base64 -w 0)
 
 # Echo a JSON string that Terraform can parse as the result
 echo -n "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}"

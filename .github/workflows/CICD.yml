@@ -1,0 +1,66 @@
+name: "CICD_v2"
+
+on: [push, pull_request]
+
+jobs:
+  Linux:
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #, windows-latest, macos-latest]
+        include:
+          # Run on an Alpine container (uses BusyBox)
+          - os: ubuntu-latest
+            image: "alpine:latest"
+            shell: "/bin/sh"
+
+          # Run on Ubuntu 18.04 container with the Bash shell
+          - os: ubuntu-latest
+            image: "ubuntu:18.04"
+            shell: "/bin/bash"
+          # Run on Ubuntu 18.04 container with the Dash shell
+          - os: ubuntu-latest
+            image: "ubuntu:18.04"
+            shell: "/bin/dash"
+
+          # Run on Ubuntu 20.04 container with the Bash shell
+          - os: ubuntu-latest
+            image: "ubuntu:20.04"
+            shell: "/bin/bash"
+          # Run on Ubuntu 20.04 container with the Dash shell
+          - os: ubuntu-latest
+            image: "ubuntu:20.04"
+            shell: "/bin/dash"
+
+          # Run on Ubuntu 22.04 container with the Bash shell
+          - os: ubuntu-latest
+            image: "ubuntu:22.04"
+            shell: "/bin/bash"
+          # Run on Ubuntu 22.04 container with the Dash shell
+          - os: ubuntu-latest
+            image: "ubuntu:22.04"
+            shell: "/bin/dash"
+
+          # Run on Arch Linux
+          - os: ubuntu-latest
+            image: "archlinux:latest"
+            shell: "/bin/sh"
+
+    runs-on: ${{ matrix.os }}
+    container:
+      image: ${{ matrix.image }}
+      volumes:
+        - ${{ github.workspace }}:/workspace
+    
+    steps:
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: /workspace
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: /workspace
+        run: terraform plan
