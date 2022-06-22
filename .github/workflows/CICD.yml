@@ -28,15 +28,15 @@ jobs:
 
           # Installation commands per image
           - image_name: "alpine"
-            tf_install: wget https://releases.hashicorp.com/terraform/{TF_VERSION}/terraform_{TF_VERSION}_linux_amd64.zip && unzip terraform_{TF_VERSION}_linux_amd64.zip && sudo mv terraform /usr/bin/terraform
+            tf_install: wget https://releases.hashicorp.com/terraform/{TF_VERSION}/terraform_{TF_VERSION}_linux_amd64.zip \&\& unzip terraform_{TF_VERSION}_linux_amd64.zip \&\& sudo mv terraform /usr/bin/terraform
           - image_name: "redhat/ubi8-minimal"
-            tf_install: sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && sudo yum -y install terraform={TF_VERSION}
+            tf_install: sudo yum install -y yum-utils\&\&& sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo \&\& sudo yum -y install terraform={TF_VERSION}
           - image_name: "redhat/ubi9-minimal"
-            tf_install: sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && sudo yum -y install terraform={TF_VERSION}
+            tf_install: sudo yum install -y yum-utils\&\&&& sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo \&\& sudo yum -y install terraform={TF_VERSION}
           - image_name: "fedora"
-            tf_install: sudo dnf install -y dnf-plugins-core && sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && sudo dnf -y install terraform={TF_VERSION}
+            tf_install: sudo dnf install -y dnf-plugins-core \&\& sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo \&\& sudo dnf -y install terraform={TF_VERSION}
           - image_name: "ubuntu"
-            tf_install: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - && sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && sudo apt-get update && sudo apt-get install terraform={TF_VERSION}
+            tf_install: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - \&\& sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \&\& sudo apt-get update \&\& sudo apt-get install terraform={TF_VERSION}
 
     runs-on: ubuntu-latest
     container:
@@ -45,6 +45,13 @@ jobs:
         - ${{ github.workspace }}:/workspace
     
     steps:
+      - name: Matrix Values
+        run: |
+          echo "image_name: ${{ matrix.image_name }}"
+          echo "image_tag: ${{ matrix.image_tag }}"
+          echo "shell: ${{ matrix.shell }}"
+          echo "tf_version: ${{ matrix.tf_version }}"
+
       - name: Install Terraform
         run: |
           _cmd=$(echo '${{ matrix.tf_install }}' | sed 's/{TF_VERSION}/${{ matrix.tf_version }}/')
