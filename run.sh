@@ -108,8 +108,8 @@ if ( [ "$_exit_on_nonzero" = "true" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_o
 fi
 
 # Base64-encode the stdout and stderr for transmission back to Terraform
-_stdout_b64=$(echo -n "$_stdout" | base64 $wrap_flag)
-_stderr_b64=$(echo -n "$_stderr" | base64 $wrap_flag)
+_stdout_b64=$(echo -n "$_stdout" | base64)
+_stderr_b64=$(echo -n "$_stderr" | base64)
 
 # Echo a JSON string that Terraform can parse as the result
 echo -n "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}"
