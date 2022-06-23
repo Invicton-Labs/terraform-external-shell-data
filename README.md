@@ -1,4 +1,4 @@
-![Build](https://github.com/Invicton-Labs/terraform-external-shell-data/actions/workflows/CICD/badge.svg)
+![Build](https://github.com/Invicton-Labs/terraform-external-shell-data/actions/workflows/CICD.yml/badge.svg)
 
 # Terraform Shell (Data)
 
