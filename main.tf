@@ -27,7 +27,7 @@ locals {
   // Generate the environment variable file
   env_file_content = join(";", [
     for k, v in local.var_environment :
-    "${k}:${base64encode(v)}"
+    "${base64encode(k)}:${base64encode(v)}"
   ])
 
   is_debug     = local.var_execution_id != null

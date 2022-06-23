@@ -30,7 +30,7 @@ foreach ($_env in $_env_vars) {
         continue
     }
     $_env_parts = $_env.Split(":")
-    [Environment]::SetEnvironmentVariable($_env_parts[0], [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_env_parts[1])), "Process") 
+    [Environment]::SetEnvironmentVariable([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_env_parts[0])), [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_env_parts[1])), "Process") 
 }
 
 # Write the command to a file

@@ -12,20 +12,29 @@ case "${kernel_name}" in
         # It's MacOS.
         # Mac doesn't support the "-d" flag for base64 decoding, 
         # so we have to use the full "--decode" flag instead.
-        decode_flag="--decode"
+        _decode_flag="--decode"
         # Mac doesn't support the "-w" flag for base64 wrapping, 
         # and it isn't needed because by default it doens't break lines.
-        wrap_flag="" ;;
+        _wrap_flag="" ;;
     *)
         # It's NOT MacOS.
         # Not all Linux base64 installs (e.g. BusyBox) support the full
         # "--decode" flag. So, we use "-d" here, since it's supported
         # by everything except MacOS.
-        decode_flag="-d"
+        _decode_flag="-d"
         # All non-Mac installs need this to be specified to prevent line
         # wrapping, which adds newlines that we don't want.
-        wrap_flag="-w0" ;;
+        _wrap_flag="-w0" ;;
 esac
+
+# This checks if the "-n" flag is supported on this shell, and sets vars accordingly
+if [ "`echo -n`" = "-n" ]; then
+  _echo_n=""
+  _echo_c="\c"
+else
+  _echo_n="-n"
+  _echo_c=""
+fi
 
 _raw_input="$(cat)"
 
@@ -34,14 +43,14 @@ _raw_input="$(cat)"
 IFS="|"
 set -o noglob
 set -- $_raw_input""
-_execution_id=$(echo "$2" | base64 $decode_flag)
-_directory=$(echo "$3" | base64 $decode_flag)
-_command=$(echo "$4" | base64 $decode_flag)
-_environment=$(echo "$5" | base64 $decode_flag)
-_exit_on_nonzero=$(echo "$6" | base64 $decode_flag)
-_exit_on_stderr=$(echo "$7" | base64 $decode_flag)
-_debug=$(echo "$8" | base64 $decode_flag)
-_shell=$(echo "$9" | base64 $decode_flag)
+_execution_id=$(echo "$2" | base64 $_decode_flag)
+_directory=$(echo "$3" | base64 $_decode_flag)
+_command=$(echo "$4" | base64 $_decode_flag)
+_environment=$(echo "$5" | base64 $_decode_flag)
+_exit_on_nonzero=$(echo "$6" | base64 $_decode_flag)
+_exit_on_stderr=$(echo "$7" | base64 $_decode_flag)
+_debug=$(echo "$8" | base64 $_decode_flag)
+_shell=$(echo "$9" | base64 $_decode_flag)
 
 # Generate a random/unique ID if an ID wasn't explicitly set
 if [ "$_execution_id" = " " ]; then
@@ -76,9 +85,8 @@ for _env in "$@"; do
     # For each env var, split it on a colon. We use colons because we know
     # that neither the env var name nor the base64-encoded value will contain
     # a colon.
-    _key="$(echo "$_env" | cut -d':' -f1)"
-    _val="$(echo "$_env" | cut -d':' -f2 | base64 $decode_flag)"
-    echo "$_key: $_val" > "$_directory/$_execution_id.env-$_key"
+    _key="$(echo $_echo_n "${_env}${_echo_c}" | cut -d':' -f1 | base64 $_decode_flag)"
+    _val="$(echo $_echo_n "${_env}${_echo_c}" | cut -d':' -f2 | base64 $_decode_flag)"
     export "$_key"="$_val"
 done
 
@@ -120,8 +128,8 @@ if ( [ "$_exit_on_nonzero" = "true" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_o
 fi
 
 # Base64-encode the stdout and stderr for transmission back to Terraform
-_stdout_b64=$(echo -n "$_stdout" | base64 $wrap_flag)
-_stderr_b64=$(echo -n "$_stderr" | base64 $wrap_flag)
+_stdout_b64=$(echo $_echo_n "${_stdout}${_echo_c}" | base64 $_wrap_flag)
+_stderr_b64=$(echo $_echo_n "${_stderr}${_echo_c}" | base64 $_wrap_flag)
 
 # Echo a JSON string that Terraform can parse as the result
-echo "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}"
+echo $_echo_n "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}${_echo_c}"

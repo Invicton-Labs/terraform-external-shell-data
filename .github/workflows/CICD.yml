@@ -13,7 +13,6 @@ jobs:
           "fedora:latest", 
           "centos:latest",
           "ubuntu:latest",
-          "homebrew/brew:latest",
           "amazonlinux:1",
           "amazonlinux:2"
         ]
@@ -73,13 +72,6 @@ jobs:
           dnf install -y dnf-plugins-core git
           dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
           dnf -y install terraform-${{ matrix.tf_version }}
-
-      - name: Install Terraform (Homebrew)
-        if: startsWith(matrix.image, 'homebrew/brew:')
-        run: |
-          pwd
-          brew install tfenv
-          tfenv install ${{ matrix.tf_version }}
 
       - name: Install Terraform (Ubuntu)
         if: startsWith(matrix.image, 'ubuntu:')
