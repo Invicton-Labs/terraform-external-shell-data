@@ -91,10 +91,10 @@ for _env in "$@"; do
 done
 
 # Write the command to a file. We do the base64 decode here
-# so printf doesn't try to interpolate any special characters.
-printf "$_command_b64" | base64 $_decode_flag > "$_cmdfile"
+# so an echo into the file doesn't try to interpolate any special characters.
+echo $_echo_n "${_command_b64}${_echo_c}" | base64 $_decode_flag > "$_cmdfile"
 # Always force the command file to exit with the last exit code
-printf "\n\nexit $?" >> "$_cmdfile"
+echo $_echo_n "\n\nexit $?${_echo_c}" >> "$_cmdfile"
 
 # Run the command, but don't exit this script on an error
 set +e
@@ -118,7 +118,7 @@ fi
 if ( [ "$_exit_on_nonzero" = "true" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_on_stderr" = "true" ] && ! [ -z "$_stderr" ] ); then
     # If there was a stderr, write it out as an error
     if ! [ -z "$_stderr" ]; then
-        >&2 echo "$_stderr"
+        >&2 echo $_echo_n "${_stderr}${_echo_c}"
     fi
 
     # If a non-zero exit code was given, exit with it

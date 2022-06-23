@@ -9,7 +9,6 @@ $json = ConvertFrom-Json $jsonpayload
 
 $_execution_id = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.execution_id))
 $_directory = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.directory))
-$_command = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.command))
 $_environment = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.environment))
 $_exit_on_nonzero = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_nonzero))
 $_exit_on_stderr = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_stderr))
@@ -34,8 +33,9 @@ foreach ($_env in $_env_vars) {
 }
 
 # Write the command to a file
+[System.IO.File]::WriteAllText("$_cmdfile", [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.command)))
 # Always force the command file to exit with the last exit code
-[System.IO.File]::WriteAllText("$_cmdfile", "$_command `n`nExit `$LASTEXITCODE")
+[System.IO.File]::AppendAllText("$_cmdfile", "`nExit `$LASTEXITCODE")
 
 $ErrorActionPreference = "Continue"
 $_process = Start-Process powershell.exe -ArgumentList "-file ""$_cmdfile""" -Wait -PassThru -NoNewWindow -RedirectStandardError "$_stderrfile" -RedirectStandardOutput "$_stdoutfile"
