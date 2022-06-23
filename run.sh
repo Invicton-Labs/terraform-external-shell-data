@@ -92,7 +92,7 @@ done
 
 # Write the command to a file. We do the base64 decode here
 # so an echo into the file doesn't try to interpolate any special characters.
-echo $_echo_n "${_command_b64}${_echo_c}" | base64 $_decode_flag > "$_cmdfile"
+echo "${_command_b64}" | base64 $_decode_flag > "$_cmdfile"
 # Always force the command file to exit with the last exit code
 echo $_echo_n "\n\nexit $?${_echo_c}" >> "$_cmdfile"
 
