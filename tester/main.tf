@@ -82,6 +82,7 @@ module "tests" {
   force_wait_for_apply      = lookup(each.value, "force_wait_for_apply", null)
   timeout                   = lookup(each.value, "timeout", null)
   unix_interpreter          = var.unix_interpreter
+  execution_id              = each.key
 }
 
 locals {
