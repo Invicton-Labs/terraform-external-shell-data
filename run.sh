@@ -90,9 +90,16 @@ for _env in "$@"; do
     export "$_key"="$_val"
 done
 
+# A command to run at the very end of the input script. This forces the script to
+# always exit with the exit code of the last command that returned an exit code.
+_final_cmd=<<EOF
+
+exit $?
+EOF
+
 # Run the command, but don't exit this script on an error
 set +e
-    2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)"
+    2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
 set -e
 

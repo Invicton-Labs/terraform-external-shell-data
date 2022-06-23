@@ -16,7 +16,6 @@ locals {
 
   // Select the command based on the operating system
   // Add the appropriate command to exit with the last exit code
-  //command = "${local.is_windows ? local.command_windows : local.command_unix}\n${local.is_windows ? "Exit `$LASTEXITCODE" : "exit $?"}"
   command = local.is_windows ? local.command_windows : local.command_unix
   // The directory where temporary files should be stored
   temporary_dir = abspath("${path.module}/tmpfiles")
