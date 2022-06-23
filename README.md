@@ -1,3 +1,5 @@
+![Build](https://github.com/Invicton-Labs/terraform-external-shell-data/actions/workflows/CICD/badge.svg)
+
 # Terraform Shell (Data)
 
 On the Terraform Registry: [Invicton-Labs/shell-data/external](https://registry.terraform.io/modules/Invicton-Labs/shell-data/external/latest)
