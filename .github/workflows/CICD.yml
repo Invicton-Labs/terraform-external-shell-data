@@ -24,9 +24,11 @@ jobs:
           "0.13.0",
         ]
         exclude:
-          # Amazon Linux 1 doesn't have this version
+          # Amazon Linux doesn't have this version
           # available to install.
           - image: amazonlinux:1
+            tf_version: 0.13.0
+          - image: amazonlinux:2
             tf_version: 0.13.0
 
     runs-on: ubuntu-latest
