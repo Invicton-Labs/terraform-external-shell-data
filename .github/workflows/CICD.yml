@@ -103,6 +103,55 @@ jobs:
         working-directory: /workspace/tester
         run: terraform plan
 
+  LinuxShells:
+    strategy:
+      fail-fast: false
+      matrix:
+        tf_version: [
+          "1.2.0",
+          "1.1.0",
+          "1.0.0",
+          "0.14.0",
+          "0.13.0",
+        ]
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tester
+    
+    steps:
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ matrix.tf_version }}
+
+      # Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Install shells
+      - name: Install Shells
+        run: |
+          apt update
+          apt install -y ksh zsh ash dash
+
+      # Initialize the workspace
+      - name: Terraform Init
+        run: terraform init
+
+      # We only need to run a plan, since there are no resources used in testing
+      - name: Terraform Plan (bash)
+        run: terraform plan -var "unix_interpreter=/bin/bash"
+      - name: Terraform Plan (ksh)
+        run: terraform plan -var "unix_interpreter=/bin/ksh"
+      - name: Terraform Plan (zsh)
+        run: terraform plan -var "unix_interpreter=/bin/zsh"
+      - name: Terraform Plan (ash)
+        run: terraform plan -var "unix_interpreter=/bin/ash"
+      - name: Terraform Plan (dash)
+        run: terraform plan -var "unix_interpreter=/bin/dash"
+
   Windows:
     strategy:
       fail-fast: false
