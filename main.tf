@@ -33,7 +33,7 @@ locals {
   is_debug     = local.var_execution_id != null
   execution_id = local.var_execution_id != null ? local.var_execution_id : " "
 
-  query = {
+  query_windows = {
     // If it's Windows, use the query parameter normally since PowerShell can natively handle JSON decoding
     execution_id    = base64encode(local.execution_id)
     directory       = base64encode(local.temporary_dir)
@@ -43,6 +43,20 @@ locals {
     exit_on_stderr  = base64encode(local.var_fail_on_stderr ? "true" : "false")
     debug           = base64encode(local.is_debug ? "true" : "false")
   }
+  query = local.is_windows ? local.query_windows : {
+    // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
+    // without needing to install jq
+    "" = join("", [local.unix_query_separator, join(local.unix_query_separator, [
+      local.query_windows.execution_id,
+      local.query_windows.directory,
+      local.query_windows.command,
+      local.query_windows.environment,
+      local.query_windows.exit_on_nonzero,
+      local.query_windows.exit_on_stderr,
+      local.query_windows.debug,
+      base64encode(local.var_unix_interpreter),
+    ]), local.unix_query_separator])
+  }
 }
 
 // Run the command
@@ -50,20 +64,9 @@ data "external" "run" {
   program = local.is_windows ? ["powershell.exe", "${abspath(path.module)}/run.ps1"] : [local.var_unix_interpreter, "${abspath(path.module)}/run.sh"]
   // Mark the query as sensitive just so it doesn't show up in the plan output.
   // Since it's all base64-encoded anyways, showing it in the plan wouldn't be useful
-  query = sensitive(local.is_windows ? local.query : {
-    // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
-    // without needing to install jq
-    "" = join("", [local.unix_query_separator, join(local.unix_query_separator, [
-      local.query.execution_id,
-      local.query.directory,
-      local.query.command,
-      local.query.environment,
-      local.query.exit_on_nonzero,
-      local.query.exit_on_stderr,
-      local.query.debug,
-      base64encode(local.var_unix_interpreter),
-    ]), local.unix_query_separator])
-  })
+  // We want to support older versions of TF that don't have the sensitive function though,
+  // so fall back to not marking it as sensitive.
+  query       = try(sensitive(local.query), local.query)
   working_dir = local.wait_for_apply == null ? local.var_working_dir : local.var_working_dir
 }
 
