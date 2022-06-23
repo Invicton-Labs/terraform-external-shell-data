@@ -56,8 +56,6 @@ if [ "$_execution_id" = " " ]; then
     else
         _execution_id="$RANDOM-$RANDOM-$RANDOM-$RANDOM"
     fi
-    echo "{\"stdout\": \"$_execution_id\", \"stderr\": \"$_execution_id\", \"exitcode\": \"0\"}"
-    exit 0
 fi
 _cmdfile="$_directory/$_execution_id.sh"
 _stderrfile="$_directory/$_execution_id.stderr"
