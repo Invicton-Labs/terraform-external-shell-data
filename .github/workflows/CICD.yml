@@ -174,3 +174,13 @@ jobs:
       # We only need to run a plan, since there are no resources used in testing
       - name: Terraform Plan
         run: terraform plan
+
+  # This job just waits for all other jobs to pass. We have it here
+  # so our branch protection rule can reference a single job, instead
+  # of needing to list every matrix value of every job above.
+  Passed
+    runs-on: ubuntu-latest
+    needs: [Linux, Windows, MacOS]
+    steps:
+    - name: Mark tests as passed
+      run: echo "🎉"
