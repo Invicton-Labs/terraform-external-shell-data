@@ -90,16 +90,9 @@ for _env in "$@"; do
     export "$_key"="$_val"
 done
 
-# Write the command to a file. We do the base64 decode here
-# so an echo into the file doesn't try to interpolate any special characters.
-echo $_echo_n "${_command_b64}${_echo_c}" | base64 $_decode_flag > "$_cmdfile"
-# Always force the command file to exit with the last exit code. We use
-# printf because it interprets the new lines on all shells.
-printf "\n\nexit \$?" >> "$_cmdfile"
-
 # Run the command, but don't exit this script on an error
 set +e
-    2>"$_stderrfile" >"$_stdoutfile" $_shell "$_cmdfile"
+    2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)"
     _exitcode=$?
 set -e
 
@@ -109,7 +102,6 @@ _stderr="$(cat "$_stderrfile")"
 
 # Delete the files, unless we're using debug mode
 if [ "$_debug" != "true" ]; then
-    rm "$_cmdfile"
     rm "$_stderrfile"
     rm "$_stdoutfile"
 fi

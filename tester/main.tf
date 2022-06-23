@@ -82,7 +82,6 @@ module "tests" {
   force_wait_for_apply      = lookup(each.value, "force_wait_for_apply", null)
   timeout                   = lookup(each.value, "timeout", null)
   unix_interpreter          = var.unix_interpreter
-  execution_id              = each.key
 }
 
 locals {
@@ -91,7 +90,7 @@ locals {
     name => flatten([
       contains(local.tests_fields[name], "expected_stdout") ? config.expected_stdout != module.tests[name].stdout ? ["Incorrect value for stdout: expected \"${config.expected_stdout}\", got \"${module.tests[name].stdout}\""] : [] : [],
       contains(local.tests_fields[name], "expected_stderr") ? config.expected_stderr != module.tests[name].stderr ? ["Incorrect value for stderr: expected \"${config.expected_stderr}\", got \"${module.tests[name].stderr}\""] : [] : [],
-      contains(local.tests_fields[name], "expected_exit_code") ? config.expected_exit_code != module.tests[name].exit_code ? ["Incorrect value for stdout: expected \"${config.expected_exit_code}\", got \"${module.tests[name].exit_code}\""] : [] : [],
+      contains(local.tests_fields[name], "expected_exit_code") ? config.expected_exit_code != module.tests[name].exit_code ? ["Incorrect value for exit code: expected \"${config.expected_exit_code}\", got \"${module.tests[name].exit_code}\""] : [] : [],
     ])
   }
 

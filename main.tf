@@ -15,8 +15,9 @@ locals {
   command_windows = chomp(local.var_command_windows != null ? local.var_command_windows : (local.var_command_unix != null ? local.var_command_unix : local.null_command_windows))
 
   // Select the command based on the operating system
+  // Add the appropriate command to exit with the last exit code
+  //command = "${local.is_windows ? local.command_windows : local.command_unix}\n${local.is_windows ? "Exit `$LASTEXITCODE" : "exit $?"}"
   command = local.is_windows ? local.command_windows : local.command_unix
-
   // The directory where temporary files should be stored
   temporary_dir = abspath("${path.module}/tmpfiles")
 
@@ -35,8 +36,9 @@ locals {
 
   query_windows = {
     // If it's Windows, use the query parameter normally since PowerShell can natively handle JSON decoding
-    execution_id    = base64encode(local.execution_id)
-    directory       = base64encode(local.temporary_dir)
+    execution_id = base64encode(local.execution_id)
+    directory    = base64encode(local.temporary_dir)
+    # 
     command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
     exit_on_nonzero = base64encode(local.var_fail_on_nonzero_exit_code ? "true" : "false")
