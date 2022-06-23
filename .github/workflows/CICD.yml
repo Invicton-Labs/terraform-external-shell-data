@@ -77,7 +77,7 @@ jobs:
       - name: Install Terraform (Homebrew)
         if: startsWith(matrix.image, 'homebrew/brew:')
         run: |
-          cd ~/
+          pwd
           brew install tfenv
           tfenv install ${{ matrix.tf_version }}
 
