@@ -133,8 +133,8 @@ jobs:
       # Install shells
       - name: Install Shells
         run: |
-          apt update
-          apt install -y ksh zsh ash dash
+          sudo apt-get update
+          sudo apt-get install -y ksh zsh ash dash
 
       # Initialize the workspace
       - name: Terraform Init
