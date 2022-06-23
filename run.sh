@@ -43,14 +43,14 @@ _raw_input="$(cat)"
 IFS="|"
 set -o noglob
 set -- $_raw_input""
-_execution_id=$(echo "$2" | base64 $_decode_flag)
-_directory=$(echo "$3" | base64 $_decode_flag)
-_command=$(echo "$4" | base64 $_decode_flag)
-_environment=$(echo "$5" | base64 $_decode_flag)
-_exit_on_nonzero=$(echo "$6" | base64 $_decode_flag)
-_exit_on_stderr=$(echo "$7" | base64 $_decode_flag)
-_debug=$(echo "$8" | base64 $_decode_flag)
-_shell=$(echo "$9" | base64 $_decode_flag)
+_execution_id="$(echo "$2" | base64 $_decode_flag)"
+_directory="$(echo "$3" | base64 $_decode_flag)"
+_command_b64="$4"
+_environment="$(echo "$5" | base64 $_decode_flag)"
+_exit_on_nonzero="$(echo "$6" | base64 $_decode_flag)"
+_exit_on_stderr="$(echo "$7" | base64 $_decode_flag)"
+_debug="$(echo "$8" | base64 $_decode_flag)"
+_shell="$(echo "$9" | base64 $_decode_flag)"
 
 # Generate a random/unique ID if an ID wasn't explicitly set
 if [ "$_execution_id" = " " ]; then
@@ -90,9 +90,11 @@ for _env in "$@"; do
     export "$_key"="$_val"
 done
 
-# Write the command to a file
+# Write the command to a file. We do the base64 decode here
+# so printf doesn't try to interpolate any special characters.
+printf "$_command_b64" | base64 $_decode_flag > "$_cmdfile"
 # Always force the command file to exit with the last exit code
-printf "$_command\n\nexit $?" > "$_cmdfile"
+printf "\n\nexit $?" >> "$_cmdfile"
 
 # Run the command, but don't exit this script on an error
 set +e
