@@ -94,24 +94,25 @@ done
 
 # A command to run at the very end of the input script. This forces the script to
 # always exit with the exit code of the last command that returned an exit code.
-_final_cmd=<<EOF
+_cmd_suffix=<<EOF
 exit $?
 EOF
-
-#timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 
 # Run the command, but don't exit this script on an error
 _timed_out="false"
 set +e
   if [ $_timeout -eq 0 ]; then
     # No timeout is set, so run the command without a timeout
-    2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
+    2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
   else
     # There is a timeout set, so run the command with it
     # First, disable monitoring so the shell doesn't output anything to stderr if it's terminated
-    set +e
-    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
+    _cmd_prefix=<<EOF
+set +m
+
+EOF
+    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "${_cmd_prefix}$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
     # Re-enable monitoring
     set -e
