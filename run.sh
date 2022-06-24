@@ -6,8 +6,8 @@ fi
 set -u
 
 # This checks if we're running on MacOS
-kernel_name="$(uname -s)"
-case "${kernel_name}" in
+_kernel_name="$(uname -s)"
+case "${_kernel_name}" in
     darwin*|Darwin*)    
         # It's MacOS.
         # Mac doesn't support the "-d" flag for base64 decoding, 
@@ -15,7 +15,8 @@ case "${kernel_name}" in
         _decode_flag="--decode"
         # Mac doesn't support the "-w" flag for base64 wrapping, 
         # and it isn't needed because by default it doens't break lines.
-        _wrap_flag="" ;;
+        _wrap_flag="" 
+        _timeout_func="gtimeout" ;;
     *)
         # It's NOT MacOS.
         # Not all Linux base64 installs (e.g. BusyBox) support the full
@@ -24,7 +25,8 @@ case "${kernel_name}" in
         _decode_flag="-d"
         # All non-Mac installs need this to be specified to prevent line
         # wrapping, which adds newlines that we don't want.
-        _wrap_flag="-w0" ;;
+        _wrap_flag="-w0"
+        _timeout_func="timeout" ;;
 esac
 
 # This checks if the "-n" flag is supported on this shell, and sets vars accordingly
@@ -107,8 +109,9 @@ set +e
     2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
   else
+
     # There is a timeout set, so run the command with it
-    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
+    $_timeout_func $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
     # Check if it timed out
     if [ $_exitcode -eq 124 ]; then
