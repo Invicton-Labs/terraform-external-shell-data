@@ -98,6 +98,8 @@ _final_cmd=<<EOF
 exit $?
 EOF
 
+#timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
 # Run the command, but don't exit this script on an error
 _timed_out="false"
 set +e
@@ -106,10 +108,13 @@ set +e
     2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
   else
-
     # There is a timeout set, so run the command with it
+    # First, disable monitoring so the shell doesn't output anything to stderr if it's terminated
+    set +e
     timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
+    # Re-enable monitoring
+    set -e
     # Check if it timed out. 124 is the timeout code for most shells, 143 is for busybox.
     if [ $_exitcode -eq 124 ] || [ $_exitcode -eq 143 ] ; then
         _timed_out="true"
