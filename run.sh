@@ -107,15 +107,11 @@ set +e
     _exitcode=$?
   else
     # There is a timeout set, so run the command with it
-    # First, disable monitoring so the shell doesn't output anything to stderr if it's terminated
-    _cmd_prefix=<<EOF
-set +m
-
-EOF
-    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "${_cmd_prefix}$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
+    set +m
+    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
     # Re-enable monitoring
-    set -e
+    set -m
     # Check if it timed out. 124 is the timeout code for most shells, 143 is for busybox.
     if [ $_exitcode -eq 124 ] || [ $_exitcode -eq 143 ] ; then
         _timed_out="true"
