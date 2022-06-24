@@ -18,7 +18,8 @@ For a similar module that **runs as a resource** (only re-runs the command on re
 
 1. If only one of `command_unix` or `command_windows` is provided, that one will be used on all operating systems.
 2. Carriage returns (`\r`) are removed in all input commands. This is because Powershell doesn't require them to be present, but Unix shells don't support them, so removing them allows the same command to be used on both types of machine.
-3. Trailing newlines are trimmed for the `stdout` and `stderr` outputs. This is due to limitations with POSIX-compatible file reading and to ensure consistency between executions of the same Terraform configuration on Windows- and Unix-based machines.
+3. Carriage returns (`\r`) are removed from all outputs. This is to help ensure a consistent output across platforms.
+4. Trailing newlines are trimmed for the `stdout` and `stderr` outputs. This is due to limitations with POSIX-compatible file reading and to ensure consistency between executions of the same Terraform configuration on Windows- and Unix-based machines.
 
 ## Usage
 

@@ -1,9 +1,0 @@
-{
-    "command_unix": "echo 'hello world'\nsleep 2",
-    "command_windows": "Write-Output 'hello world'\nStart-Sleep -Seconds 2",
-    "timeout": 1,
-    "fail_on_timeout": false,
-    "expected_stdout": "hello world",
-    "expected_stderr": "",
-    "expected_exit_code": null
-}

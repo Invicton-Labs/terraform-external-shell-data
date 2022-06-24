@@ -40,10 +40,10 @@ locals {
     # 
     command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
-    timeout           = base64encode(local.var_timeout == null ? 0 : local.var_timeout)
+    timeout         = base64encode(local.var_timeout == null ? 0 : local.var_timeout)
     exit_on_nonzero = base64encode(local.var_fail_on_nonzero_exit_code ? "true" : "false")
     exit_on_stderr  = base64encode(local.var_fail_on_stderr ? "true" : "false")
-    exit_on_timeout           = base64encode(local.var_fail_on_timeout ? "true" : "false")
+    exit_on_timeout = base64encode(local.var_fail_on_timeout ? "true" : "false")
     debug           = base64encode(local.is_debug ? "true" : "false")
   }
   query = local.is_windows ? local.query_windows : {
@@ -76,8 +76,10 @@ data "external" "run" {
 }
 
 locals {
-  stderr   = trimsuffix(trimsuffix(base64decode(data.external.run.result.stderr), "\r\n"), "\n")
-  stdout   = trimsuffix(trimsuffix(base64decode(data.external.run.result.stdout), "\r\n"), "\n")
-  exitcode_str = trimspace(data.external.run.result.exitcode)
-  exitcode = local.exitcode_str == "null" ? null : tonumber(local.exitcode_str)
+  // Replace all "\r\n" (considered by Terraform to be a single character) with "\n", and remove any extraneous "\r".
+  // This helps ensure a consistent output across platforms.
+  stderr       = trimsuffix(replace(replace(base64decode(data.external.run.result.stderr), "\r\n", "\n"), "\r", "\n"), "\n")
+  stdout       = trimsuffix(replace(replace(base64decode(data.external.run.result.stdout), "\r\n", "\n"), "\r", "\n"), "\n")
+  exitcode_str = trimspace(replace(replace(base64decode(data.external.run.result.exitcode), "\r\n", "\n"), "\r", "\n"))
+  exitcode     = local.exitcode_str == "null" ? null : tonumber(local.exitcode_str)
 }

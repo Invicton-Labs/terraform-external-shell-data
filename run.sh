@@ -98,26 +98,40 @@ _cmd_suffix=<<EOF
 exit $?
 EOF
 
+# This is a custom function that executes the command, but interrupts it with a SIGALARM
+# if it runs for too long.
+timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
 # Run the command, but don't exit this script on an error
 _timed_out="false"
-set +e
-  if [ $_timeout -eq 0 ]; then
+if [ $_timeout -eq 0 ]; then
     # No timeout is set, so run the command without a timeout
+    set +e
     2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
-  else
+    set -e
+else
+    # Add a prefix to the command, which wraps the commands in a block
+    _cmd_prefix=<<EOF
+{
+EOF
+    # Extend the suffix after the command, which redirects all stderr to a new descriptor
+    # We do this so that when timeout alarm signals cause the shell to print the signal
+    # description, it doesn't get captured into the stderr that we actually want.
+    _cmd_suffix=<<EOF
+$_cmd_suffix
+} 2>&3
+EOF
     # There is a timeout set, so run the command with it
-    set +m
-    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
+    set +e
+    timeout $_timeout 3>"$_stderrfile" >"$_stdoutfile" $_shell -c "${_cmd_prefix}$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
-    # Re-enable monitoring
-    set -m
-    # Check if it timed out. 124 is the timeout code for most shells, 143 is for busybox.
-    if [ $_exitcode -eq 124 ] || [ $_exitcode -eq 143 ] ; then
+    set -e
+    # Check if it timed out. 142 is the exit code from a Perl alarm signal.
+    if [ $_exitcode -eq 142 ]; then
         _timed_out="true"
     fi
-  fi
-set -e
+fi
 
 # Read the stderr and stdout files
 _stdout="$(cat "$_stdoutfile")"
@@ -158,6 +172,7 @@ fi
 # Base64-encode the stdout and stderr for transmission back to Terraform
 _stdout_b64=$(echo $_echo_n "${_stdout}${_echo_c}" | base64 $_wrap_flag)
 _stderr_b64=$(echo $_echo_n "${_stderr}${_echo_c}" | base64 $_wrap_flag)
+_exitcode_b64=$(echo $_echo_n "${_exitcode}${_echo_c}" | base64 $_wrap_flag)
 
 # Echo a JSON string that Terraform can parse as the result
-echo $_echo_n "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode\"}${_echo_c}"
+echo $_echo_n "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode_b64\"}${_echo_c}"

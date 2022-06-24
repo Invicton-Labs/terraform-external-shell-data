@@ -111,5 +111,5 @@ if ((( "$_exit_on_nonzero" -eq "true" ) -and ($_exitcode -ne 0) -and ($_exitcode
 @{
     stderr   = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($_stderr))
     stdout   = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($_stdout))
-    exitcode = "$_exitcode"
+    exitcode = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($_exitcode))
 } | ConvertTo-Json
