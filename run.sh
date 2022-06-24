@@ -100,12 +100,9 @@ exit $?
 EOF
 
 # This is a custom function that executes the command, but interrupts it with a SIGALARM
-# if it runs for too long.
-perl_timeout() { 
-    set +e
-    perl -e 'alarm shift; exec @ARGV' "$@"; 
-    set -e
-}
+# if it runs for too long. Not all operating systems have "timeout" built in, so
+# we need to have a custom function that simulates it.
+perl_timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 
 # Run the command, but don't exit this script on an error
 _timed_out="false"
