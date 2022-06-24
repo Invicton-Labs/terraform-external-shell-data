@@ -71,12 +71,12 @@ locals {
 }
 
 variable "timeout" {
-  description = "The maximum number of seconds to allow the shell command to execute for  If it exceeds this timeout, it will be killed and will fail. Leave as the default (`null`) for no timeout."
+  description = "The maximum number of seconds to allow the shell command to execute for  If it exceeds this timeout, it will be killed and will fail. Leave as the default (`null`) or set as 0 for no timeout."
   type        = number
   default     = null
 }
 locals {
-  var_timeout = var.timeout
+  var_timeout = var.timeout == 0 ? null : var.timeout
 }
 
 variable "fail_on_timeout" {
