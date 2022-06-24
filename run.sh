@@ -15,8 +15,7 @@ case "${_kernel_name}" in
         _decode_flag="--decode"
         # Mac doesn't support the "-w" flag for base64 wrapping, 
         # and it isn't needed because by default it doens't break lines.
-        _wrap_flag="" 
-        _timeout_func="gtimeout" ;;
+        _wrap_flag="" ;;
     *)
         # It's NOT MacOS.
         # Not all Linux base64 installs (e.g. BusyBox) support the full
@@ -25,8 +24,7 @@ case "${_kernel_name}" in
         _decode_flag="-d"
         # All non-Mac installs need this to be specified to prevent line
         # wrapping, which adds newlines that we don't want.
-        _wrap_flag="-w0"
-        _timeout_func="timeout" ;;
+        _wrap_flag="-w0" ;;
 esac
 
 # This checks if the "-n" flag is supported on this shell, and sets vars accordingly
@@ -97,7 +95,6 @@ done
 # A command to run at the very end of the input script. This forces the script to
 # always exit with the exit code of the last command that returned an exit code.
 _final_cmd=<<EOF
-
 exit $?
 EOF
 
@@ -111,10 +108,10 @@ set +e
   else
 
     # There is a timeout set, so run the command with it
-    $_timeout_func $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
+    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
-    # Check if it timed out
-    if [ $_exitcode -eq 124 ]; then
+    # Check if it timed out. 124 is the timeout code for most shells, 143 is for busybox.
+    if [ $_exitcode -eq 124 ] || [ $_exitcode -eq 143 ] ; then
         _timed_out="true"
     fi
   fi
