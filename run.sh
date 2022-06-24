@@ -108,7 +108,7 @@ set +e
     _exitcode=$?
   else
     # There is a timeout set, so run the command with it
-    timeout --kill-after=5 $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
+    timeout $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
     # Check if it timed out
     if [ $_exitcode -eq 124 ]; then
@@ -146,7 +146,7 @@ if ( [ "$_exit_on_nonzero" = "true" ] && [ "$_exitcode" != "null" ] && [ $_exitc
     fi
 
     # If a non-zero exit code was given, exit with it
-    if ( [ "$exitcode" != "null" ] && [ "$exitcode" -ne 0 ] ); then
+    if ( [ "$_exitcode" != "null" ] && [ "$_exitcode" -ne 0 ] ); then
         exit $_exitcode
     fi
     # Otherwise, exit with a default non-zero exit code
