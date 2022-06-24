@@ -227,7 +227,7 @@ jobs:
   # of needing to list every matrix value of every job above.
   Passed:
     runs-on: ubuntu-latest
-    needs: [Linux, Windows, MacOS]
+    needs: [Linux, LinuxShells, Windows, MacOS]
     steps:
     - name: Mark tests as passed
       run: echo "🎉"
