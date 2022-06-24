@@ -24,10 +24,11 @@ locals {
         "command_windows",
         "environment",
         "working_dir",
+        "timeout",
+        "force_wait_for_apply",
         "fail_on_nonzero_exit_code",
         "fail_on_stderr",
-        "force_wait_for_apply",
-        "timeout",
+        "fail_on_timeout",
         "platforms"
       ], local.expected_output_fields), field)
     ]
@@ -77,11 +78,13 @@ module "tests" {
   command_windows           = lookup(each.value, "command_windows", null)
   environment               = lookup(each.value, "environment", null)
   working_dir               = lookup(each.value, "working_dir", null)
-  fail_on_nonzero_exit_code = lookup(each.value, "fail_on_nonzero_exit_code", null)
-  fail_on_stderr            = lookup(each.value, "fail_on_stderr", null)
   force_wait_for_apply      = lookup(each.value, "force_wait_for_apply", null)
   timeout                   = lookup(each.value, "timeout", null)
+  fail_on_nonzero_exit_code = lookup(each.value, "fail_on_nonzero_exit_code", null)
+  fail_on_stderr            = lookup(each.value, "fail_on_stderr", null)
+  fail_on_timeout = lookup(each.value, "fail_on_timeout", null)
   unix_interpreter          = var.unix_interpreter
+  execution_id              = each.key
 }
 
 locals {
@@ -90,7 +93,7 @@ locals {
     name => flatten([
       contains(local.tests_fields[name], "expected_stdout") ? config.expected_stdout != module.tests[name].stdout ? ["Incorrect value for stdout: expected \"${config.expected_stdout}\", got \"${module.tests[name].stdout}\""] : [] : [],
       contains(local.tests_fields[name], "expected_stderr") ? config.expected_stderr != module.tests[name].stderr ? ["Incorrect value for stderr: expected \"${config.expected_stderr}\", got \"${module.tests[name].stderr}\""] : [] : [],
-      contains(local.tests_fields[name], "expected_exit_code") ? config.expected_exit_code != module.tests[name].exit_code ? ["Incorrect value for exit code: expected \"${config.expected_exit_code}\", got \"${module.tests[name].exit_code}\""] : [] : [],
+      contains(local.tests_fields[name], "expected_exit_code") ? config.expected_exit_code != module.tests[name].exit_code ? ["Incorrect value for exit code: expected \"${config.expected_exit_code == null ? "null" : config.expected_exit_code}\", got \"${module.tests[name].exit_code == null ? "null" : module.tests[name].exit_code}\""] : [] : [],
     ])
   }
 

@@ -47,10 +47,12 @@ _execution_id="$(echo "$2" | base64 $_decode_flag)"
 _directory="$(echo "$3" | base64 $_decode_flag)"
 _command_b64="$4"
 _environment="$(echo "$5" | base64 $_decode_flag)"
-_exit_on_nonzero="$(echo "$6" | base64 $_decode_flag)"
-_exit_on_stderr="$(echo "$7" | base64 $_decode_flag)"
-_debug="$(echo "$8" | base64 $_decode_flag)"
-_shell="$(echo "$9" | base64 $_decode_flag)"
+_timeout="$(echo "$6" | base64 $_decode_flag)"
+_exit_on_nonzero="$(echo "$7" | base64 $_decode_flag)"
+_exit_on_stderr="$(echo "$8" | base64 $_decode_flag)"
+_exit_on_timeout="$(echo "$9" | base64 $_decode_flag)"
+_debug="$(echo "${10}" | base64 $_decode_flag)"
+_shell="$(echo "${11}" | base64 $_decode_flag)"
 
 # Generate a random/unique ID if an ID wasn't explicitly set
 if [ "$_execution_id" = " " ]; then
@@ -98,9 +100,21 @@ exit $?
 EOF
 
 # Run the command, but don't exit this script on an error
+_timed_out="false"
 set +e
+  if [ $_timeout -eq 0 ]; then
+    # No timeout is set, so run the command without a timeout
     2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
     _exitcode=$?
+  else
+    # There is a timeout set, so run the command with it
+    timeout --kill-after=5 $_timeout 2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_final_cmd}"
+    _exitcode=$?
+    # Check if it timed out
+    if [ $_exitcode -eq 124 ]; then
+        _timed_out="true"
+    fi
+  fi
 set -e
 
 # Read the stderr and stdout files
@@ -113,16 +127,26 @@ if [ "$_debug" != "true" ]; then
     rm "$_stdoutfile"
 fi
 
+# Check if the execution timed out
+if [ "$_timed_out" = "true" ]; then
+    if [ "$_exit_on_timeout" = "true" ]; then
+        >&2 echo $_echo_n "Execution timed out after $_timeout seconds${_echo_c}"
+        exit 1
+    else
+        _exitcode="null"
+    fi
+fi
+
 # If we want to kill Terraform on a non-zero exit code and the exit code was non-zero, OR
 # we want to kill Terraform on a non-empty stderr and the stderr was non-empty
-if ( [ "$_exit_on_nonzero" = "true" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_on_stderr" = "true" ] && ! [ -z "$_stderr" ] ); then
+if ( [ "$_exit_on_nonzero" = "true" ] && [ "$_exitcode" != "null" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_on_stderr" = "true" ] && ! [ -z "$_stderr" ] ); then
     # If there was a stderr, write it out as an error
     if ! [ -z "$_stderr" ]; then
         >&2 echo $_echo_n "${_stderr}${_echo_c}"
     fi
 
     # If a non-zero exit code was given, exit with it
-    if [ $_exitcode -ne 0 ]; then
+    if ( [ "$exitcode" != "null" ] && [ "$exitcode" -ne 0 ] ); then
         exit $_exitcode
     fi
     # Otherwise, exit with a default non-zero exit code

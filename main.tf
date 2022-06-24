@@ -40,8 +40,10 @@ locals {
     # 
     command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
+    timeout           = base64encode(local.var_timeout == null ? 0 : local.var_timeout)
     exit_on_nonzero = base64encode(local.var_fail_on_nonzero_exit_code ? "true" : "false")
     exit_on_stderr  = base64encode(local.var_fail_on_stderr ? "true" : "false")
+    exit_on_timeout           = base64encode(local.var_fail_on_timeout ? "true" : "false")
     debug           = base64encode(local.is_debug ? "true" : "false")
   }
   query = local.is_windows ? local.query_windows : {
@@ -52,8 +54,10 @@ locals {
       local.query_windows.directory,
       local.query_windows.command,
       local.query_windows.environment,
+      local.query_windows.timeout,
       local.query_windows.exit_on_nonzero,
       local.query_windows.exit_on_stderr,
+      local.query_windows.exit_on_timeout,
       local.query_windows.debug,
       base64encode(local.var_unix_interpreter),
     ]), local.unix_query_separator])
@@ -74,5 +78,6 @@ data "external" "run" {
 locals {
   stderr   = trimsuffix(trimsuffix(base64decode(data.external.run.result.stderr), "\r\n"), "\n")
   stdout   = trimsuffix(trimsuffix(base64decode(data.external.run.result.stdout), "\r\n"), "\n")
-  exitcode = tonumber(trimspace(data.external.run.result.exitcode))
+  exitcode_str = trimspace(data.external.run.result.exitcode)
+  exitcode = local.exitcode_str == "null" ? null : tonumber(local.exitcode_str)
 }

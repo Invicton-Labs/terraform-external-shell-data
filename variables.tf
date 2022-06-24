@@ -79,6 +79,15 @@ locals {
   var_timeout = var.timeout
 }
 
+variable "fail_on_timeout" {
+  description = "Whether a Terraform error should be thrown if the command times out. If true, nothing will be returned from this module and Terraform will fail the plan/apply. If false, any `stdout` and `stderr` output that was produced before timing out will be returned in their respective outputs, and the `exit_code` output will be `null`."
+  type        = bool
+  default     = true
+}
+locals {
+  var_fail_on_timeout = var.fail_on_timeout != null ? var.fail_on_timeout : true
+}
+
 variable "unix_interpreter" {
   description = "The interpreter to use when running commands on a Unix-based system. This is primarily used for testing, and should usually be left to the default value."
   type        = string
