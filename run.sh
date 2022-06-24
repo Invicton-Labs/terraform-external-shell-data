@@ -139,8 +139,8 @@ EOF
     _exitcode=$?
     set -e
     # Check if it timed out. 142 is the exit code from a Perl alarm signal, 124 is the exit code from most built-in 
-    # "timeout" commands, and 142 is the exit code from the Busybox "timeout" command.
-    if [ $_exitcode -eq 142 ] || [ $_exitcode -eq 124 ]; then
+    # "timeout" commands, and 143 is the exit code from the Busybox "timeout" command.
+    if [ $_exitcode -eq 142 ] || [ $_exitcode -eq 124 ] || [ $_exitcode -eq 143 ]; then
         _timed_out="true"
     fi
 fi
