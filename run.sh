@@ -70,7 +70,8 @@ if [ "$_execution_id" = " " ]; then
         _execution_id="$RANDOM-$RANDOM-$RANDOM-$RANDOM"
     fi
 fi
-_cmdfile="$_directory/$_execution_id.sh"
+
+# The filenames to direct output to
 _stderrfile="$_directory/$_execution_id.stderr"
 _stdoutfile="$_directory/$_execution_id.stdout"
 
@@ -100,7 +101,11 @@ EOF
 
 # This is a custom function that executes the command, but interrupts it with a SIGALARM
 # if it runs for too long.
-timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+perl_timeout() { 
+    set +e
+    perl -e 'alarm shift; exec @ARGV' "$@"; 
+    set -e
+}
 
 # Run the command, but don't exit this script on an error
 _timed_out="false"
@@ -122,13 +127,20 @@ EOF
 $_cmd_suffix
 } 2>&3
 EOF
+    # Default to using the built-in timeout command
+    _timeout_cmd="timeout"
+    if ! command -v $_timeout_cmd >/dev/null 2>/dev/null; then
+        # If it doesn't exist though, use the custom Perl one we created
+        _timeout_cmd="perl_timeout"
+    fi
     # There is a timeout set, so run the command with it
     set +e
-    timeout $_timeout 3>"$_stderrfile" >"$_stdoutfile" $_shell -c "${_cmd_prefix}$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
+    $_timeout_cmd $_timeout 3>"$_stderrfile" >"$_stdoutfile" $_shell -c "${_cmd_prefix}$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
     set -e
-    # Check if it timed out. 142 is the exit code from a Perl alarm signal.
-    if [ $_exitcode -eq 142 ]; then
+    # Check if it timed out. 142 is the exit code from a Perl alarm signal, 124 is the exit code from most built-in 
+    # "timeout" commands, and 142 is the exit code from the Busybox "timeout" command.
+    if [ $_exitcode -eq 142 ] || [ $_exitcode -eq 124 ]; then
         _timed_out="true"
     fi
 fi

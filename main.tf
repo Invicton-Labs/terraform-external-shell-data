@@ -71,7 +71,7 @@ data "external" "run" {
   // Since it's all base64-encoded anyways, showing it in the plan wouldn't be useful
   // We want to support older versions of TF that don't have the sensitive function though,
   // so fall back to not marking it as sensitive.
-  query       = try(sensitive(local.query), local.query)
+  query       = local.is_debug ? local.query : try(sensitive(local.query), local.query)
   working_dir = local.wait_for_apply == null ? local.var_working_dir : local.var_working_dir
 }
 
