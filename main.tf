@@ -26,7 +26,7 @@ locals {
 
   # Remove any carriage returns from the env vars
   env_vars = {
-    for k, v in local.var_environment :
+    for k, v in merge(local.var_environment, local.var_environment_sensitive) :
     k => replace(replace(v, "\r", ""), "\r\n", "\n")
   }
 
@@ -41,9 +41,8 @@ locals {
 
   query_windows = {
     // If it's Windows, use the query parameter normally since PowerShell can natively handle JSON decoding
-    execution_id = base64encode(local.execution_id)
-    directory    = base64encode(local.temporary_dir)
-    # 
+    execution_id    = base64encode(local.execution_id)
+    directory       = base64encode(local.temporary_dir)
     command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
     timeout         = base64encode(local.var_timeout == null ? 0 : local.var_timeout)
@@ -84,8 +83,25 @@ data "external" "run" {
 locals {
   // Replace all "\r\n" (considered by Terraform to be a single character) with "\n", and remove any extraneous "\r".
   // This helps ensure a consistent output across platforms.
-  stderr       = trimsuffix(replace(replace(base64decode(data.external.run.result.stderr), "\r\n", "\n"), "\r", "\n"), "\n")
-  stdout       = trimsuffix(replace(replace(base64decode(data.external.run.result.stdout), "\r\n", "\n"), "\r", "\n"), "\n")
-  exitcode_str = trimspace(replace(replace(base64decode(data.external.run.result.exitcode), "\r\n", "\n"), "\r", "\n"))
-  exitcode     = local.exitcode_str == "null" ? null : tonumber(local.exitcode_str)
+  stderr = trimsuffix(replace(replace(base64decode(data.external.run.result.stderr), "\r", ""), "\r\n", "\n"), "\n")
+  stdout = trimsuffix(replace(replace(base64decode(data.external.run.result.stdout), "\r", ""), "\r\n", "\n"), "\n")
+  // This checks if the stderr/stdout contains any of the values of the `environment_sensitive` input variable.
+  // We use `replace` to check for the presence, even though the recommended tool is `regexall`, because
+  // we don't control what the search string is, so it could be a regex pattern, but we want to treat
+  // it as a literal.
+  stderr_contains_sensitive = length([
+    for k, v in local.var_environment_sensitive :
+    true
+    if length(replace(local.stderr, v, "")) != length(local.stderr)
+  ]) > 0
+  stdout_contains_sensitive = length([
+    for k, v in local.var_environment_sensitive :
+    true
+    if length(replace(local.stdout, v, "")) != length(local.stdout)
+  ]) > 0
+  // The `try` is to support versions of Terraform that don't support `sensitive`.
+  stderr_censored = local.stderr_contains_sensitive ? try(sensitive(local.stderr), local.stderr) : local.stderr
+  stdout_censored = local.stdout_contains_sensitive ? try(sensitive(local.stdout), local.stdout) : local.stdout
+  exitcode_str    = trimspace(replace(replace(base64decode(data.external.run.result.exitcode), "\r", ""), "\r\n", "\n"))
+  exitcode        = local.exitcode_str == "null" ? null : tonumber(local.exitcode_str)
 }

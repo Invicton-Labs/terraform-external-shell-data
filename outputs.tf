@@ -47,11 +47,11 @@ output "unix_interpreter" {
 //==================================================
 output "stdout" {
   description = "The stdout output of the shell command, with all carriage returns and trailing newlines removed."
-  value       = local.stdout
+  value       = local.stdout_censored
 }
 output "stderr" {
   description = "The stderr output of the shell command, with all carriage returns and trailing newlines removed."
-  value       = local.stderr
+  value       = local.stderr_censored
 }
 output "exit_code" {
   description = "The exit status code of the shell command. If the `timeout` input variable was provided and the command timed out, this will be `null`."

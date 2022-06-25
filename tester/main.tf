@@ -23,6 +23,7 @@ locals {
         "command_unix",
         "command_windows",
         "environment",
+        "environment_sensitive",
         "working_dir",
         "timeout",
         "fail_on_nonzero_exit_code",
@@ -71,19 +72,20 @@ module "assert_expected_output_fields" {
 }
 
 module "tests" {
-  source          = "../"
-  for_each        = module.assert_test_fields_valid.checked && module.assert_expected_output_fields.checked ? local.tests_to_run : null
-  command_unix    = lookup(each.value, "command_unix", null)
-  command_windows = lookup(each.value, "command_windows", null)
-  environment     = lookup(each.value, "environment", null)
-  working_dir     = lookup(each.value, "working_dir", null)
-  //force_wait_for_apply      = true
+  source                    = "../"
+  for_each                  = module.assert_test_fields_valid.checked && module.assert_expected_output_fields.checked ? local.tests_to_run : null
+  command_unix              = lookup(each.value, "command_unix", null)
+  command_windows           = lookup(each.value, "command_windows", null)
+  environment               = lookup(each.value, "environment", null)
+  environment_sensitive     = lookup(each.value, "environment_sensitive", null)
+  working_dir               = lookup(each.value, "working_dir", null)
   timeout                   = lookup(each.value, "timeout", null)
   fail_on_nonzero_exit_code = lookup(each.value, "fail_on_nonzero_exit_code", null)
   fail_on_stderr            = lookup(each.value, "fail_on_stderr", null)
   fail_on_timeout           = lookup(each.value, "fail_on_timeout", null)
   unix_interpreter          = var.unix_interpreter
-  execution_id              = each.key
+  //force_wait_for_apply      = true
+  //execution_id              = each.key
 }
 
 locals {

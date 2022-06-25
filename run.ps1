@@ -21,6 +21,7 @@ if ( "$_execution_id" -eq " " ) {
     $_execution_id = [guid]::NewGuid().ToString()
 }
 $_cmdfile = "$_directory/$_execution_id.ps1"
+$_debugfile = "$_directory/$_execution_id.debug.txt"
 
 # Set the environment variables
 $_env_vars = $_environment.Split(";")
@@ -36,6 +37,23 @@ foreach ($_env in $_env_vars) {
 [System.IO.File]::WriteAllText("$_cmdfile", [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.command)))
 # Always force the command file to exit with the last exit code
 [System.IO.File]::AppendAllText("$_cmdfile", "`nExit `$LASTEXITCODE")
+# This is a function that recursively kills all child processes of a process
+function TreeKill([int]$ProcessId) {
+    if ($_debug) { Write-Output "Getting process children for $ProcessId" | Out-File -Append -FilePath "$_debugfile" }
+    Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq $ProcessId } | ForEach-Object { TreeKill -ProcessId $_.ProcessId }
+    if ($_debug) { Write-Output "Killing process $ProcessId" | Out-File -Append -FilePath "$_debugfile" }
+    $_p = Get-Process -ErrorAction SilentlyContinue -Id $ProcessId
+    if ($_p) {
+        Stop-Process -Force -Id $ProcessId
+        $_p.WaitForExit(10000) | Out-Null
+        if (!$_p.HasExited) {
+            $_err = "Failed to kill the process after waiting for $_delay seconds:`n$_"
+            if ($_debug) { Write-Output "$_err" | Out-File -Append -FilePath "$_debugfile" }
+            Write-Error "$_err"
+            Exit -1
+        }
+    }
+}
 
 $_pinfo = New-Object System.Diagnostics.ProcessStartInfo
 $_pinfo.FileName = "powershell.exe"
@@ -48,24 +66,25 @@ $_process = New-Object System.Diagnostics.Process
 $_process.StartInfo = $_pinfo
 
 $ErrorActionPreference = "Continue"
-$_process.Start() | Out-Null  
-$outTask = $_process.StandardOutput.ReadToEndAsync();
-$errTask = $_process.StandardError.ReadToEndAsync();
+$_process.Start() | Out-Null
+$_out_task = $_process.StandardOutput.ReadToEndAsync();
+$_err_task = $_process.StandardError.ReadToEndAsync();
 $_timed_out = $false
 if ([int]$_timeout -eq 0) {
-    $_process.WaitForExit()
+    $_process.WaitForExit() | Out-Null
 }
 else {
     $_process_result = $_process.WaitForExit($_timeout * 1000)
     if (-Not $_process_result) {
-        $_process.Kill();
+        if ($_debug) { Write-Output "Process timed out, killing..." | Out-File -Append -FilePath "$_debugfile" }
+        TreeKill -ProcessId $_process.Id
         $_timed_out = $true
     }
 }
 $ErrorActionPreference = "Stop"
 
-$_stdout = $outTask.Result
-$_stderr = $errTask.Result
+$_stdout = $_out_task.Result
+$_stderr = $_err_task.Result
 $_exitcode = $_process.ExitCode
 
 # Delete the command file, unless we're using debug mode,
@@ -82,7 +101,7 @@ if ($_timed_out) {
         $ErrorActionPreference = "Continue"
         Write-Error "Execution timed out after $_timeout seconds"
         $ErrorActionPreference = "Stop"
-        exit 1
+        Exit -1
     }
     else {
         $_exitcode = "null"

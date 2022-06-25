@@ -34,6 +34,24 @@ locals {
   var_environment = var.environment != null ? var.environment : {}
 }
 
+variable "environment_sensitive" {
+  description = "Map of sensitive environment variables to pass to the command. If any of these values are detected in the `stdout` or `stderr` outputs, they will be marked as sensitive. These keys/values will be merged with the `environment` input variable (this overwrites those values with the same key)."
+  type        = map(string)
+  default     = {}
+  validation {
+    // Ensure that none of the variable names violate the env var naming rules
+    condition = var.environment_sensitive == null ? true : length([
+      for k in keys(var.environment_sensitive) :
+      true
+      if length(regexall("^[a-zA-Z_]+[a-zA-Z0-9_]*$", k)) == 0
+    ]) == 0
+    error_message = "Environment variable names must consist solely of letters, digits, and underscores, and may not start with a digit."
+  }
+}
+locals {
+  var_environment_sensitive = var.environment_sensitive != null ? var.environment_sensitive : {}
+}
+
 variable "working_dir" {
   description = "The working directory where command will be executed. Defaults to this module's install directory (usually somewhere in the `.terraform` directory)."
   type        = string
@@ -74,6 +92,10 @@ variable "timeout" {
   description = "The maximum number of seconds to allow the shell command to execute for  If it exceeds this timeout, it will be killed and will fail. Leave as the default (`null`) or set as 0 for no timeout."
   type        = number
   default     = null
+  validation {
+    condition     = var.timeout == null ? true : var.timeout >= 0
+    error_message = "The `timeout` input variable, if provided, must be greater than or equal to 0."
+  }
 }
 locals {
   var_timeout = var.timeout == 0 ? null : var.timeout
@@ -104,7 +126,7 @@ variable "execution_id" {
   validation {
     // Ensure that if an execution ID is provided, it matches the regex
     condition     = var.execution_id == null ? true : length(regexall("^[a-zA-Z0-9_. -]+$", trimspace(var.execution_id))) > 0
-    error_message = "The `execution_id` must consist solely of letters, digits, hyphens, underscores, and spaces, and may not consist entirely of whitespace."
+    error_message = "The `execution_id` input variable, if provided, must consist solely of letters, digits, hyphens, underscores, and spaces, and may not consist entirely of whitespace."
   }
 }
 locals {
