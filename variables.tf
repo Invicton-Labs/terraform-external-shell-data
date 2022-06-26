@@ -1,19 +1,22 @@
+variable "dynamic_depends_on" {
+  description = "This input variable has the same function as the `depends_on` built-in variable, but has no restrictions on what kind of content it can contain."
+  type        = any
+  default     = null
+}
+locals {
+  var_dynamic_depends_on = var.dynamic_depends_on
+}
+
 variable "command_unix" {
   description = "The command to run on creation when the module is used on a Unix machine. If not specified, will default to be the same as the `command_windows` variable."
   type        = string
   default     = null
-}
-locals {
-  var_command_unix = var.command_unix
 }
 
 variable "command_windows" {
   description = "The command to run on creation when the module is used on a Windows machine. If not specified, will default to be the same as the `command_unix` variable."
   type        = string
   default     = null
-}
-locals {
-  var_command_windows = var.command_windows
 }
 
 variable "environment" {

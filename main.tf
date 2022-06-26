@@ -3,16 +3,16 @@ locals {
 
   // If `force_wait_for_apply` is set to `true`, this will not return a value
   // until the apply step, thereby forcing the external data to wait for the apply step
-  wait_for_apply = local.var_force_wait_for_apply ? uuid() : null
+  wait_for_apply = "${local.var_force_wait_for_apply ? uuid() : ""}${jsonencode(local.var_dynamic_depends_on) == "" ? "" : ""}"
 
   # These are commands that have no effect
   null_command_unix    = ":"
   null_command_windows = "% ':'"
 
   // If command_unix is specified, use it. Otherwise, if command_windows is specified, use it. Otherwise, use a command that does nothing
-  command_unix = replace(replace(chomp(local.var_command_unix != null ? local.var_command_unix : (local.var_command_windows != null ? local.var_command_windows : local.null_command_unix)), "\r", ""), "\r\n", "\n")
+  command_unix = replace(replace(chomp(var.command_unix != null ? var.command_unix : (var.command_windows != null ? var.command_windows : local.null_command_unix)), "\r", ""), "\r\n", "\n")
   // If command_windows is specified, use it. Otherwise, if command_unix is specified, use it. Otherwise, use a command that does nothing
-  command_windows = replace(replace(chomp(local.var_command_windows != null ? local.var_command_windows : (local.var_command_unix != null ? local.var_command_unix : local.null_command_windows)), "\r", ""), "\r\n", "\n")
+  command_windows = replace(replace(chomp(var.command_windows != null ? var.command_windows : (var.command_unix != null ? var.command_unix : local.null_command_windows)), "\r", ""), "\r\n", "\n")
 
   // Select the command based on the operating system
   // Add the appropriate command to exit with the last exit code
@@ -20,11 +20,7 @@ locals {
   // The directory where temporary files should be stored
   temporary_dir = abspath("${path.module}/tmpfiles")
 
-  // A magic string that we use as a separator. It contains a UUID, so in theory, should
-  // be a globally unique ID that will never appear in input content
-  unix_query_separator = "|"
-
-  # Remove any carriage returns from the env vars
+  // Remove any carriage returns from the env vars
   env_vars = {
     for k, v in merge(local.var_environment, local.var_environment_sensitive) :
     k => replace(replace(v, "\r", ""), "\r\n", "\n")
@@ -53,8 +49,10 @@ locals {
   }
   query = local.is_windows ? local.query_windows : {
     // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
-    // without needing to install jq
-    "" = join("", [local.unix_query_separator, join(local.unix_query_separator, [
+    // without needing to install jq. The "|" character will never be found in base64-encoded content and it doesn't
+    // need to be escaped, so it's a good option.
+    "" = join("|", [
+      "",
       local.query_windows.execution_id,
       local.query_windows.directory,
       local.query_windows.command,
@@ -65,7 +63,8 @@ locals {
       local.query_windows.exit_on_timeout,
       local.query_windows.debug,
       base64encode(local.var_unix_interpreter),
-    ]), local.unix_query_separator])
+      ""
+    ])
   }
 }
 
@@ -77,7 +76,7 @@ data "external" "run" {
   // We want to support older versions of TF that don't have the sensitive function though,
   // so fall back to not marking it as sensitive.
   query       = local.is_debug ? local.query : try(sensitive(local.query), local.query)
-  working_dir = local.wait_for_apply == null ? local.var_working_dir : local.var_working_dir
+  working_dir = local.wait_for_apply == "" ? local.var_working_dir : local.var_working_dir
 }
 
 locals {

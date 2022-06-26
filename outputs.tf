@@ -1,6 +1,10 @@
 //==================================================
 //     Outputs that match the input variables
 //==================================================
+output "dynamic_depends_on" {
+  description = "The value of the `dynamic_depends_on` input variable."
+  value       = local.var_dynamic_depends_on
+}
 output "command_unix" {
   description = "The value of the `command_unix` input variable, or the default value if the input was `null`, with all carriage returns removed."
   value       = local.command_unix

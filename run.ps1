@@ -10,11 +10,11 @@ $json = ConvertFrom-Json $jsonpayload
 $_execution_id = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.execution_id))
 $_directory = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.directory))
 $_environment = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.environment))
-$_exit_on_nonzero = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_nonzero))
-$_exit_on_stderr = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_stderr))
-$_debug = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.debug))
+$_exit_on_nonzero = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_nonzero)))
+$_exit_on_stderr = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_stderr)))
+$_debug = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.debug)))
 $_timeout = [int][System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.timeout))
-$_exit_on_timeout = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_timeout))
+$_exit_on_timeout = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_timeout)))
 
 # Generate a random/unique ID
 if ( "$_execution_id" -eq " " ) {
@@ -90,14 +90,14 @@ $_exitcode = $_process.ExitCode
 # Delete the command file, unless we're using debug mode,
 # in which case we might want to review it for debugging
 # purposes.
-if ( "$_debug" -ne "true" ) {
+if ( -not $_debug ) {
     Remove-Item "$_cmdfile"
 }
 
 # Check if the execution timed out
 if ($_timed_out) {
     # If it did, check if we're supposed to exit the script on a timeout
-    if ( "$_exit_on_timeout" -eq "true" ) {
+    if ( $_exit_on_timeout ) {
         $ErrorActionPreference = "Continue"
         Write-Error "Execution timed out after $_timeout seconds"
         $ErrorActionPreference = "Stop"
@@ -110,7 +110,7 @@ if ($_timed_out) {
 
 # If we want to kill Terraform on a non-zero exit code and the exit code was non-zero, OR
 # we want to kill Terraform on a non-empty stderr and the stderr was non-empty
-if ((( "$_exit_on_nonzero" -eq "true" ) -and ($_exitcode -ne 0) -and ($_exitcode -ne "null")) -or (( "$_exit_on_stderr" -eq "true" ) -and "$_stderr")) {
+if ((( $_exit_on_nonzero ) -and ($_exitcode -ne 0) -and ($_exitcode -ne "null")) -or (( $_exit_on_stderr ) -and "$_stderr")) {
     # If there was a stderr, write it out as an error
     if ("$_stderr") {
         # Set continue to not kill the process on writing an error, so we can exit with the desired exit code
