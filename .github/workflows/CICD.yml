@@ -12,6 +12,8 @@ jobs:
         uses: Invicton-Labs/terraform-module-testing-configuration/matrix@dev
         with:
           minimum_tf_version: '0.13.0'
+          # 0.15.0 has a bug where it doesn't like sensitive-marked outputs
+          excluded_tf_versions: '0.15.0'
 
       - name: Output Matrix
         run: |
