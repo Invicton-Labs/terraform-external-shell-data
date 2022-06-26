@@ -1,0 +1,18 @@
+{
+    "platforms": [
+        "unix"
+    ],
+    "command_unix": ">&2 echo \"${INPUT}-${lowerINPUT1234}-${MULTILINE}\"",
+    "environment": {
+        "INPUT": "hello world",
+        "lowerINPUT1234": "goodbye world"
+    },
+    "environment_sensitive": {
+        "MULTILINE": "line1\nline2\nline3"
+    },
+    "expected_stdout": "",
+    "expected_stderr": "hello world-goodbye world-line1\nline2\nline3",
+    "expected_exit_code": 0,
+    "expected_stdout_sensitive": false,
+    "expected_stderr_sensitive": true
+}

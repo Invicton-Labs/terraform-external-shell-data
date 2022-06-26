@@ -10,5 +10,6 @@
     },
     "expected_stdout": "hello world-goodbye world-line1\nline2\nline3",
     "expected_stderr": "",
-    "expected_exit_code": 0
+    "expected_exit_code": 0,
+    "expected_stdout_sensitive": true
 }
