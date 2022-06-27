@@ -1,7 +1,7 @@
 locals {
   test_file_path = "${path.module}/../tests/"
   // The ternary within the fileset just forces TF to wait for the delete_existing_files module before going any further
-  test_files = fileset(module.delete_existing_files.stdout == "" ? local.test_file_path : local.test_file_path, "${local.test_file_path}**.json")
+  test_files = fileset(local.test_file_path, "${local.test_file_path}**.json")
   platform   = dirname("/") == "\\" ? "windows" : "unix"
   tests = {
     for test_file in local.test_files :
