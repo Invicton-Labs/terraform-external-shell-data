@@ -89,30 +89,34 @@ module "tests" {
 }
 
 locals {
+  tf_version_supports_nonsensitive = can(nonsensitive(sensitive("hello world")))
+
   incorrect_outputs = {
     for name, config in local.tests_to_run :
     name => flatten([
       contains(local.tests_fields[name], "expected_stdout") ? config.expected_stdout != module.tests[name].stdout ? ["Incorrect value for stdout: expected \"${config.expected_stdout}\", got \"${module.tests[name].stdout}\""] : [] : [],
       contains(local.tests_fields[name], "expected_stderr") ? config.expected_stderr != module.tests[name].stderr ? ["Incorrect value for stderr: expected \"${config.expected_stderr}\", got \"${module.tests[name].stderr}\""] : [] : [],
       contains(local.tests_fields[name], "expected_exit_code") ? config.expected_exit_code != module.tests[name].exit_code ? ["Incorrect value for exit code: expected \"${config.expected_exit_code == null ? "null" : config.expected_exit_code}\", got \"${module.tests[name].exit_code == null ? "null" : module.tests[name].exit_code}\""] : [] : [],
-      contains(local.tests_fields[name], "expected_stdout_sensitive") ? (
-        config.expected_stdout_sensitive ? (
-          // If we expect it to be sensitive, make sure we can nonsensitive it
-          !can(nonsensitive(module.tests[name].stdout)) ? ["Incorrect sensitivity for stdout: expected a sensitive value, but received a non-sensitive value."] : []
-          ) : (
-          // If we expect it to be nonsensitive, make sure we can NOT nonsensitive it
-          can(nonsensitive(module.tests[name].stdout)) ? ["Incorrect sensitivity for stdout: expected a non-sensitive value, but received a sensitive value."] : []
-        )
-      ) : [],
-      contains(local.tests_fields[name], "expected_stderr_sensitive") ? (
-        config.expected_stderr_sensitive ? (
-          // If we expect it to be sensitive, make sure we can nonsensitive it
-          !can(nonsensitive(module.tests[name].stderr)) ? ["Incorrect sensitivity for stderr: expected a sensitive value, but received a non-sensitive value."] : []
-          ) : (
-          // If we expect it to be nonsensitive, make sure we can NOT nonsensitive it
-          can(nonsensitive(module.tests[name].stderr)) ? ["Incorrect sensitivity for stderr: expected a non-sensitive value, but received a sensitive value."] : []
-        )
-      ) : [],
+      local.tf_version_supports_nonsensitive ? [
+        contains(local.tests_fields[name], "expected_stdout_sensitive") ? (
+          config.expected_stdout_sensitive ? (
+            // If we expect it to be sensitive, make sure we can nonsensitive it
+            !can(nonsensitive(module.tests[name].stdout)) ? ["Incorrect sensitivity for stdout: expected a sensitive value, but received a non-sensitive value."] : []
+            ) : (
+            // If we expect it to be nonsensitive, make sure we can NOT nonsensitive it
+            can(nonsensitive(module.tests[name].stdout)) ? ["Incorrect sensitivity for stdout: expected a non-sensitive value, but received a sensitive value."] : []
+          )
+        ) : [],
+        contains(local.tests_fields[name], "expected_stderr_sensitive") ? (
+          config.expected_stderr_sensitive ? (
+            // If we expect it to be sensitive, make sure we can nonsensitive it
+            !can(nonsensitive(module.tests[name].stderr)) ? ["Incorrect sensitivity for stderr: expected a sensitive value, but received a non-sensitive value."] : []
+            ) : (
+            // If we expect it to be nonsensitive, make sure we can NOT nonsensitive it
+            can(nonsensitive(module.tests[name].stderr)) ? ["Incorrect sensitivity for stderr: expected a non-sensitive value, but received a sensitive value."] : []
+          )
+        ) : [],
+      ] : []
     ])
   }
 
