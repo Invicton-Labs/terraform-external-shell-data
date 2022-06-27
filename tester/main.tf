@@ -1,7 +1,8 @@
 locals {
   test_file_path = "${path.module}/../tests/"
-  test_files     = fileset(local.test_file_path, "${local.test_file_path}**.json")
-  platform       = dirname("/") == "\\" ? "windows" : "unix"
+  // The ternary within the fileset just forces TF to wait for the delete_existing_files module before going any further
+  test_files = fileset(module.delete_existing_files.stdout == "" ? local.test_file_path : local.test_file_path, "${local.test_file_path}**.json")
+  platform   = dirname("/") == "\\" ? "windows" : "unix"
   tests = {
     for test_file in local.test_files :
     replace(replace(trimsuffix(trimprefix(test_file, local.test_file_path), ".json"), "\\", "/"), "/", "_") => jsondecode(file("${local.test_file_path}${test_file}"))
