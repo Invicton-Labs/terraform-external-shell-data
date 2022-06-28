@@ -1,3 +1,5 @@
+![Build](https://github.com/Invicton-Labs/terraform-external-shell-data/actions/workflows/CICD.yml/badge.svg)
+
 # Terraform Shell (Data)
 
 On the Terraform Registry: [Invicton-Labs/shell-data/external](https://registry.terraform.io/modules/Invicton-Labs/shell-data/external/latest)
@@ -5,16 +7,22 @@ On the Terraform Registry: [Invicton-Labs/shell-data/external](https://registry.
 This module provides a wrapper for running shell scripts as data sources (re-run on every plan/apply) and capturing the output. Unlike Terraform's standard [External Data Source](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/data_source), this module supports:
 - Environment variables
 - Capturing `stdout`, `stderr`, and `exit_code` of the command
-- Built-in support for both Unix and Windows
+- Built-in support for all major flavors of Linux, all POSIX-compatible shells, Windows, and MacOS
 - Optional Terraform failure when an error in the given command occurs
+- Optional timeouts for commands
 
-For Windows, this module should work on any system that supports a relatively modern version of PowerShell. For Unix, this module should work on any system that supports `sed` and `base64` (which is the vast majority of out-of-the-box systems).
+For Windows, this module should work on any system that supports a relatively modern version of PowerShell. For Unix (Linux and MacOS), this module should work on any POSIX-compatible shell that supports `echo`, `cat`, `cut`, `head`, and `base64` (which is the vast majority of out-of-the-box systems).
 
 For a similar module that **runs as a resource** (only re-runs the command on resource re-create or on a change in a trigger), see [this module](https://registry.terraform.io/modules/Invicton-Labs/shell-resource/external/latest) on the Terraform Registry.
 
-## Usage
+## Notes:
 
-**Note:** if only one of `command_unix` or `command_windows` is provided, that one will be used on all operating systems. The same applies for `command_when_destroy_unix` and `command_when_destroy_windows`.
+1. If only one of `command_unix` or `command_windows` is provided, that one will be used on all operating systems.
+2. Carriage returns (`\r`) are removed in all input commands. This is because Powershell doesn't require them to be present, but Unix shells don't support them, so removing them allows the same command to be used on both types of machine.
+3. Carriage returns (`\r`) are removed from all outputs. This is to help ensure a consistent output across platforms.
+4. Trailing newlines are trimmed for the `stdout` and `stderr` outputs. This is due to limitations with POSIX-compatible file reading and to ensure consistency between executions of the same Terraform configuration on Windows- and Unix-based machines.
+
+## Usage
 
 ```
 module "shell_data_hello" {
