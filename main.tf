@@ -39,15 +39,16 @@ locals {
     // If it's Windows, use the query parameter normally since PowerShell can natively handle JSON decoding
     execution_id    = base64encode(local.execution_id)
     directory       = base64encode(local.temporary_dir)
-    command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
     timeout         = base64encode(local.var_timeout == null ? 0 : local.var_timeout)
     exit_on_nonzero = base64encode(local.var_fail_on_nonzero_exit_code ? "true" : "false")
     exit_on_stderr  = base64encode(local.var_fail_on_stderr ? "true" : "false")
     exit_on_timeout = base64encode(local.var_fail_on_timeout ? "true" : "false")
     debug           = base64encode(local.is_debug ? "true" : "false")
+    command         = base64encode(local.command)
   }
-  query = local.is_windows ? local.query_windows : {
+
+  query_unix = {
     // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
     // without needing to install jq. The "|" character will never be found in base64-encoded content and it doesn't
     // need to be escaped, so it's a good option.
@@ -55,17 +56,19 @@ locals {
       "",
       local.query_windows.execution_id,
       local.query_windows.directory,
-      local.query_windows.command,
       local.query_windows.environment,
       local.query_windows.timeout,
       local.query_windows.exit_on_nonzero,
       local.query_windows.exit_on_stderr,
       local.query_windows.exit_on_timeout,
       local.query_windows.debug,
+      local.query_windows.command,
       base64encode(local.var_unix_interpreter),
       ""
     ])
   }
+
+  query = local.is_windows ? local.query_windows : local.query_unix
 }
 
 // Run the command
@@ -75,7 +78,7 @@ data "external" "run" {
   // Since it's all base64-encoded anyways, showing it in the plan wouldn't be useful
   // We want to support older versions of TF that don't have the sensitive function though,
   // so fall back to not marking it as sensitive.
-  query       = local.is_debug ? local.query : try(sensitive(local.query), local.query)
+  query       = local.var_suppress_console && !local.is_debug ? try(sensitive(local.query), local.query) : local.query
   working_dir = local.wait_for_apply == "" ? local.var_working_dir : local.var_working_dir
 }
 

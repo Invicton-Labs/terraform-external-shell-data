@@ -30,6 +30,7 @@ locals {
         "fail_on_nonzero_exit_code",
         "fail_on_stderr",
         "fail_on_timeout",
+        "suppress_console",
         "platforms",
       ], local.expected_output_fields), field)
     ]
@@ -84,6 +85,7 @@ module "tests" {
   fail_on_nonzero_exit_code = lookup(each.value, "fail_on_nonzero_exit_code", null)
   fail_on_stderr            = lookup(each.value, "fail_on_stderr", null)
   fail_on_timeout           = lookup(each.value, "fail_on_timeout", null)
+  suppress_console          = lookup(each.value, "suppress_console", null)
   unix_interpreter          = var.unix_interpreter
   //force_wait_for_apply      = true
   //execution_id              = each.key

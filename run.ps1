@@ -10,11 +10,12 @@ $json = ConvertFrom-Json $jsonpayload
 $_execution_id = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.execution_id))
 $_directory = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.directory))
 $_environment = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.environment))
+$_timeout = [int][System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.timeout))
 $_exit_on_nonzero = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_nonzero)))
 $_exit_on_stderr = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_stderr)))
-$_debug = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.debug)))
-$_timeout = [int][System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.timeout))
 $_exit_on_timeout = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_timeout)))
+$_debug = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.debug)))
+$_command_b64 = $json.command
 
 # Generate a random/unique ID
 if ( "$_execution_id" -eq " " ) {
@@ -33,10 +34,15 @@ foreach ($_env in $_env_vars) {
     [Environment]::SetEnvironmentVariable([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_env_parts[0])), [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_env_parts[1])), "Process") 
 }
 
+if ($_debug) { Write-Output "Environment variables set" | Out-File -FilePath "$_debugfile" }
+
 # Write the command to a file
-[System.IO.File]::WriteAllText("$_cmdfile", [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.command)))
+[System.IO.File]::WriteAllText("$_cmdfile", [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_command_b64)))
 # Always force the command file to exit with the last exit code
 [System.IO.File]::AppendAllText("$_cmdfile", "`nExit `$LASTEXITCODE")
+
+if ($_debug) { Write-Output "Command file prepared" | Out-File -Append -FilePath "$_debugfile" }
+
 # This is a function that recursively kills all child processes of a process
 function TreeKill([int]$ProcessId) {
     if ($_debug) { Write-Output "Getting process children for $ProcessId" | Out-File -Append -FilePath "$_debugfile" }
@@ -57,6 +63,7 @@ function TreeKill([int]$ProcessId) {
 
 $_pinfo = New-Object System.Diagnostics.ProcessStartInfo
 $_pinfo.FileName = "powershell.exe"
+# This allows capturing the output to a variable
 $_pinfo.RedirectStandardError = $true
 $_pinfo.RedirectStandardOutput = $true
 $_pinfo.UseShellExecute = $false
@@ -65,11 +72,14 @@ $_pinfo.Arguments = "-NoProfile -File `"$_cmdfile`""
 $_process = New-Object System.Diagnostics.Process
 $_process.StartInfo = $_pinfo
 
+if ($_debug) { Write-Output "Starting process" | Out-File -Append -FilePath "$_debugfile" }
+
 $ErrorActionPreference = "Continue"
 $_process.Start() | Out-Null
 $_out_task = $_process.StandardOutput.ReadToEndAsync();
 $_err_task = $_process.StandardError.ReadToEndAsync();
 $_timed_out = $false
+
 if ([int]$_timeout -eq 0) {
     $_process.WaitForExit() | Out-Null
 }
@@ -82,6 +92,8 @@ else {
     }
 }
 $ErrorActionPreference = "Stop"
+
+if ($_debug) { Write-Output "Finished process" | Out-File -Append -FilePath "$_debugfile" }
 
 $_stdout = $_out_task.Result
 $_stderr = $_err_task.Result
@@ -125,6 +137,8 @@ if ((( $_exit_on_nonzero ) -and ($_exitcode -ne 0) -and ($_exitcode -ne "null"))
     # Otherwise, exit with a default non-zero exit code
     exit 1
 }
+
+if ($_debug) { Write-Output "Done!" | Out-File -Append -FilePath "$_debugfile" }
 
 # Return the outputs as a JSON-encoded string for Terraform to parse
 @{
