@@ -135,3 +135,12 @@ variable "execution_id" {
 locals {
   var_execution_id = var.execution_id
 }
+
+variable "suppress_console" {
+  description = "Whether to suppress the Terraform console output (including plan content and shell execution status messages) for this module. If enabled, much of the content will be hidden by marking it as \"sensitive\"."
+  type        = bool
+  default     = true
+}
+locals {
+  var_suppress_console = var.suppress_console != null ? var.suppress_console : false
+}
