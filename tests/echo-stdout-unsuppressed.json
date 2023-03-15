@@ -4,5 +4,5 @@
     "expected_stdout": "hello world",
     "expected_stderr": "",
     "expected_exit_code": 0,
-    "suppress_output": false
+    "suppress_console": false
 }
