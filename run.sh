@@ -1,8 +1,10 @@
-set -eu
+set -e
 if ! [ -z "$BASH" ]; then
     # Only Bash supports this feature
     set -o pipefail
 fi
+# Set this after checking for the BASH variable
+set -u
 
 # This checks if we're running on MacOS
 _kernel_name="$(uname -s)"
