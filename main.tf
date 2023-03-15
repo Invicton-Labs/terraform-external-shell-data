@@ -39,13 +39,13 @@ locals {
     // If it's Windows, use the query parameter normally since PowerShell can natively handle JSON decoding
     execution_id    = base64encode(local.execution_id)
     directory       = base64encode(local.temporary_dir)
-    command         = base64encode(local.command)
     environment     = base64encode(local.env_file_content)
     timeout         = base64encode(local.var_timeout == null ? 0 : local.var_timeout)
     exit_on_nonzero = base64encode(local.var_fail_on_nonzero_exit_code ? "true" : "false")
     exit_on_stderr  = base64encode(local.var_fail_on_stderr ? "true" : "false")
     exit_on_timeout = base64encode(local.var_fail_on_timeout ? "true" : "false")
     debug           = base64encode(local.is_debug ? "true" : "false")
+    command         = base64encode(local.command)
   }
   query = local.is_windows ? local.query_windows : {
     // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
@@ -55,7 +55,6 @@ locals {
       "",
       local.query_windows.execution_id,
       local.query_windows.directory,
-      local.query_windows.command,
       local.query_windows.environment,
       local.query_windows.timeout,
       local.query_windows.exit_on_nonzero,
@@ -63,6 +62,7 @@ locals {
       local.query_windows.exit_on_timeout,
       local.query_windows.debug,
       base64encode(local.var_unix_interpreter),
+      local.query_windows.command,
       ""
     ])
   }

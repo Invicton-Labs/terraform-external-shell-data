@@ -10,11 +10,11 @@ $json = ConvertFrom-Json $jsonpayload
 $_execution_id = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.execution_id))
 $_directory = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.directory))
 $_environment = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.environment))
+$_timeout = [int][System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.timeout))
 $_exit_on_nonzero = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_nonzero)))
 $_exit_on_stderr = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_stderr)))
-$_debug = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.debug)))
-$_timeout = [int][System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.timeout))
 $_exit_on_timeout = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.exit_on_timeout)))
+$_debug = [System.Convert]::ToBoolean([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.debug)))
 
 # Generate a random/unique ID
 if ( "$_execution_id" -eq " " ) {
@@ -37,6 +37,7 @@ foreach ($_env in $_env_vars) {
 [System.IO.File]::WriteAllText("$_cmdfile", [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.command)))
 # Always force the command file to exit with the last exit code
 [System.IO.File]::AppendAllText("$_cmdfile", "`nExit `$LASTEXITCODE")
+
 # This is a function that recursively kills all child processes of a process
 function TreeKill([int]$ProcessId) {
     if ($_debug) { Write-Output "Getting process children for $ProcessId" | Out-File -Append -FilePath "$_debugfile" }
@@ -57,6 +58,7 @@ function TreeKill([int]$ProcessId) {
 
 $_pinfo = New-Object System.Diagnostics.ProcessStartInfo
 $_pinfo.FileName = "powershell.exe"
+# This allows capturing the output to a variable
 $_pinfo.RedirectStandardError = $true
 $_pinfo.RedirectStandardOutput = $true
 $_pinfo.UseShellExecute = $false
@@ -70,6 +72,7 @@ $_process.Start() | Out-Null
 $_out_task = $_process.StandardOutput.ReadToEndAsync();
 $_err_task = $_process.StandardError.ReadToEndAsync();
 $_timed_out = $false
+
 if ([int]$_timeout -eq 0) {
     $_process.WaitForExit() | Out-Null
 }
