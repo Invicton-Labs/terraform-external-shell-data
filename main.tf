@@ -47,7 +47,8 @@ locals {
     debug           = base64encode(local.is_debug ? "true" : "false")
     command         = base64encode(local.command)
   }
-  query = local.is_windows ? local.query_windows : {
+
+  query_unix = {
     // If it's Unix, use base64-encoded strings with a special separator that we can easily use to separate in shell, 
     // without needing to install jq. The "|" character will never be found in base64-encoded content and it doesn't
     // need to be escaped, so it's a good option.
@@ -61,11 +62,13 @@ locals {
       local.query_windows.exit_on_stderr,
       local.query_windows.exit_on_timeout,
       local.query_windows.debug,
-      base64encode(local.var_unix_interpreter),
       local.query_windows.command,
+      base64encode(local.var_unix_interpreter),
       ""
     ])
   }
+
+  query = local.is_windows ? local.query_windows : local.query_unix
 }
 
 // Run the command

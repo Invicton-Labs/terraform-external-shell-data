@@ -138,6 +138,8 @@ if ((( $_exit_on_nonzero ) -and ($_exitcode -ne 0) -and ($_exitcode -ne "null"))
     exit 1
 }
 
+if ($_debug) { Write-Output "Done!" | Out-File -Append -FilePath "$_debugfile" }
+
 # Return the outputs as a JSON-encoded string for Terraform to parse
 @{
     stderr   = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($_stderr))
