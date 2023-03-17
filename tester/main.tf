@@ -61,14 +61,14 @@ locals {
 
 module "assert_test_fields_valid" {
   source        = "Invicton-Labs/assertion/null"
-  version       = "~>0.2.1"
+  version       = "~>0.2.2"
   condition     = local.invalid_fields_err_msg == null
   error_message = local.invalid_fields_err_msg
 }
 
 module "assert_expected_output_fields" {
   source        = "Invicton-Labs/assertion/null"
-  version       = "~>0.2.1"
+  version       = "~>0.2.2"
   condition     = local.missing_expected_output_err_msg == null
   error_message = local.missing_expected_output_err_msg
 }
@@ -134,7 +134,7 @@ locals {
 
 module "assert_expected_output" {
   source        = "Invicton-Labs/assertion/null"
-  version       = "~>0.2.1"
+  version       = "~>0.2.2"
   condition     = local.incorrect_output_err_msg == null
   error_message = try(nonsensitive(local.incorrect_output_err_msg), local.incorrect_output_err_msg)
 }

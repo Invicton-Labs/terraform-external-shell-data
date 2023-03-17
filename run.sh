@@ -77,7 +77,7 @@ _stderrfile="$_directory/$_execution_id.stderr"
 _stdoutfile="$_directory/$_execution_id.stdout"
 _debugfile="$_directory/$_execution_id.debug"
 
-if [ $_debug == "true" ] ; then echo "Arguments loaded" > "$_debugfile"; fi
+if [ $_debug = "true" ] ; then echo "Arguments loaded" > "$_debugfile"; fi
 
 # Split the env var input on semicolons. We use semicolons because we know
 # that neither the base64-encoded name or value will contain a semicolon.
@@ -111,7 +111,7 @@ perl_timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 _timed_out="false"
 if [ $_timeout -eq 0 ] ; then
     # No timeout is set, so run the command without a timeout
-    if [ $_debug == "true" ] ; then echo "Starting process with no timeout" >> "$_debugfile"; fi
+    if [ $_debug = "true" ] ; then echo "Starting process with no timeout" >> "$_debugfile"; fi
     set +e
     2>"$_stderrfile" >"$_stdoutfile" $_shell -c "$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
@@ -136,7 +136,7 @@ EOF
     fi
 
     # There is a timeout set, so run the command with it
-    if [ $_debug == "true" ] ; then echo "Starting process with a $_timeout second timeout" >> "$_debugfile"; fi
+    if [ $_debug = "true" ] ; then echo "Starting process with a $_timeout second timeout" >> "$_debugfile"; fi
     set +e
     $_timeout_cmd $_timeout 3>"$_stderrfile" >"$_stdoutfile" $_shell -c "${_cmd_prefix}$(echo "${_command_b64}" | base64 $_decode_flag)${_cmd_suffix}"
     _exitcode=$?
@@ -144,23 +144,23 @@ EOF
     # Check if it timed out. 142 is the exit code from a Perl alarm signal, 124 is the exit code from most built-in 
     # "timeout" commands, and 143 is the exit code from the Busybox "timeout" command.
     if [ $_exitcode -eq 142 ] || [ $_exitcode -eq 124 ] || [ $_exitcode -eq 143 ] ; then
-        if [ $_debug == "true" ] ; then echo "Process timed out after $_timeout seconds" >> "$_debugfile"; fi
+        if [ $_debug = "true" ] ; then echo "Process timed out after $_timeout seconds" >> "$_debugfile"; fi
         _timed_out="true"
     fi
 fi
 
-if [ $_debug == "true" ] ; then echo "Execution complete" >> "$_debugfile"; fi
+if [ $_debug = "true" ] ; then echo "Execution complete" >> "$_debugfile"; fi
 
 # Read the stderr and stdout files
-if [ $_debug == "true" ] ; then echo "Reading stdout file" >> "$_debugfile"; fi
+if [ $_debug = "true" ] ; then echo "Reading stdout file" >> "$_debugfile"; fi
 _stdout="$(cat "$_stdoutfile")"
-if [ $_debug == "true" ] ; then echo "Reading stderr file" >> "$_debugfile"; fi
+if [ $_debug = "true" ] ; then echo "Reading stderr file" >> "$_debugfile"; fi
 _stderr="$(cat "$_stderrfile")"
-if [ $_debug == "true" ] ; then echo "Finished reading output files" >> "$_debugfile"; fi
+if [ $_debug = "true" ] ; then echo "Finished reading output files" >> "$_debugfile"; fi
 
 # Delete the files, unless we're using debug mode
 if [ "$_debug" != "true" ] ; then
-    if [ $_debug == "true" ] ; then echo "Deleting stdout and stderr files" >> "$_debugfile"; fi
+    if [ $_debug = "true" ] ; then echo "Deleting stdout and stderr files" >> "$_debugfile"; fi
     rm "$_stderrfile"
     rm "$_stdoutfile"
 fi
@@ -168,7 +168,7 @@ fi
 # Check if the execution timed out
 if [ "$_timed_out" = "true" ] ; then
     if [ "$_exit_on_timeout" = "true" ] ; then
-        if [ $_debug == "true" ] ; then echo "Failing due to a timeout error" >> "$_debugfile"; fi
+        if [ $_debug = "true" ] ; then echo "Failing due to a timeout error" >> "$_debugfile"; fi
         >&2 echo $_echo_n "Execution timed out after $_timeout seconds${_echo_c}"
         exit 1
     else
@@ -178,20 +178,20 @@ fi
 
 # If we want to kill Terraform on a non-zero exit code and the exit code was non-zero, OR
 # we want to kill Terraform on a non-empty stderr and the stderr was non-empty
-if ( [ "$_exit_on_nonzero" = "true" ] && [ "$_exitcode" != "null" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_on_stderr" = "true" ] && ! [ -z "$_stderr" ] ); then
+if ( [ "$_exit_on_nonzero" = "true" ] && [ "$_exitcode" != "null" ] && [ $_exitcode -ne 0 ] ) || ( [ "$_exit_on_stderr" = "true" ] && ! [ -z "$_stderr" ] ) ; then
     # If there was a stderr, write it out as an error
     if ! [ -z "$_stderr" ] ; then
-        if [ $_debug == "true" ] && [ "$_exit_on_stderr" = "true" ] ; then echo "Failing due to presence of stderr output" >> "$_debugfile"; fi
+        if [ $_debug = "true" ] && [ "$_exit_on_stderr" = "true" ] ; then echo "Failing due to presence of stderr output" >> "$_debugfile"; fi
         >&2 echo $_echo_n "${_stderr}${_echo_c}"
     fi
 
     # If a non-zero exit code was given, exit with it
     if ( [ "$_exitcode" != "null" ] && [ "$_exitcode" -ne 0 ] ); then
-        if [ $_debug == "true" ] && [ "$_exit_on_nonzero" = "true" ] ; then echo "Failing due to a non-zero exit code ($_exitcode)" >> "$_debugfile"; fi
+        if [ $_debug = "true" ] && [ "$_exit_on_nonzero" = "true" ] ; then echo "Failing due to a non-zero exit code ($_exitcode)" >> "$_debugfile"; fi
         exit $_exitcode
     fi
-    if [ $_debug == "true" ] ; then echo -e "\nStdout:\n$_stdout" >> "$_debugfile"; fi
-    if [ $_debug == "true" ] ; then echo -e "\nStderr:\n$_stderr" >> "$_debugfile"; fi
+    if [ $_debug = "true" ] ; then echo -e "\nStdout:\n$_stdout" >> "$_debugfile"; fi
+    if [ $_debug = "true" ] ; then echo -e "\nStderr:\n$_stderr" >> "$_debugfile"; fi
     # Otherwise, exit with a default non-zero exit code
     exit 1
 fi
@@ -204,5 +204,5 @@ _exitcode_b64=$(echo $_echo_n "${_exitcode}${_echo_c}" | base64 $_wrap_flag)
 # Echo a JSON string that Terraform can parse as the result
 echo $_echo_n "{\"stdout\": \"$_stdout_b64\", \"stderr\": \"$_stderr_b64\", \"exitcode\": \"$_exitcode_b64\"}${_echo_c}"
 
-if [ $_debug == "true" ] ; then echo "Done!" >> "$_debugfile"; fi
+if [ $_debug = "true" ] ; then echo "Done!" >> "$_debugfile"; fi
 exit 0

@@ -123,7 +123,7 @@ locals {
 }
 
 variable "execution_id" {
-  description = "A unique ID for the shell execution. Used for development only and will default to a UUID."
+  description = "A unique ID for the shell execution. USED FOR DEVELOPMENT ONLY and will default to a UUID."
   type        = string
   default     = null
   validation {
