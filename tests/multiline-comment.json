@@ -1,0 +1,7 @@
+{
+    "command_unix": "a='hello world'\n# This checks if we're running on MacOS\n_kernel_name=\"$(uname -s)\"\ncase \"${_kernel_name}\" in\n    darwin*|Darwin*)    \n        # It's MacOS.\n        # Mac doesn't support the \"-d\" flag for base64 decoding, \n        # so we have to use the full \"--decode\" flag instead.\n        _decode_flag=\"--decode\" ;;\n    *)\n        # It's NOT MacOS.\n        # Not all Linux base64 installs (e.g. BusyBox) support the full\n        # \"--decode\" flag. So, we use \"-d\" here, since it's supported\n        # by everything except MacOS.\n        _decode_flag=\"-d\" ;;\nesac\necho \"$a\"",
+    "command_windows": "$a='hello world'\n# This is a comment\nWrite-Output \"$a\"",
+    "expected_stdout": "hello world",
+    "expected_stderr": "",
+    "expected_exit_code": 0
+}
