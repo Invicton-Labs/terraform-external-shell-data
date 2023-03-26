@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Generate Matrix
         id: matrix
-        uses: Invicton-Labs/terraform-module-testing/matrix@dev
+        uses: Invicton-Labs/terraform-module-testing/matrix@v0.1.0
         with:
           minimum_tf_version: '0.13.1'
           # 0.15.0 - 0.15.3 has a bug where it doesn't like sensitive-marked outputs
@@ -32,21 +32,21 @@ jobs:
 
       - name: Initialize
         id: init-pass
-        uses: Invicton-Labs/terraform-module-testing/initialize@dev
+        uses: Invicton-Labs/terraform-module-testing/initialize@v0.1.0
         with:
           tf_path: tester
 
       # Do an apply for each shell we want to test, if it's a specific shell
       - name: Test (bash)
         if: matrix.shells == 'true'
-        uses: Invicton-Labs/terraform-module-testing/apply-destroy@dev
+        uses: Invicton-Labs/terraform-module-testing/apply-destroy@v0.1.0
         with:
           tf_path: tester
           tf_args: -var="unix_interpreter=/bin/bash"
 
       - name: Test (dash)
         if: matrix.shells == 'true'
-        uses: Invicton-Labs/terraform-module-testing/apply-destroy@dev
+        uses: Invicton-Labs/terraform-module-testing/apply-destroy@v0.1.0
         with:
           tf_path: tester
           tf_args: -var="unix_interpreter=/bin/dash"
@@ -54,7 +54,7 @@ jobs:
       # Run the Terraform test without specifying a shell
       - name: Test (Default Shell)
         if: matrix.shells != 'true'
-        uses: Invicton-Labs/terraform-module-testing/apply-destroy@dev
+        uses: Invicton-Labs/terraform-module-testing/apply-destroy@v0.1.0
         with:
           tf_path: tester
           
