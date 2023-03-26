@@ -138,7 +138,3 @@ module "assert_expected_output" {
   condition     = local.incorrect_output_err_msg == null
   error_message = try(nonsensitive(local.incorrect_output_err_msg), local.incorrect_output_err_msg)
 }
-
-output "checked" {
-  value = module.assert_expected_output.checked
-}
